@@ -1,0 +1,18 @@
+{
+  "name": "Bingo da Vovó",
+  "short_name": "Bingo Vovó",
+  "description": "Bingo acessível, carinhoso e sem propagandas com números grandes e narração de voz para tablet.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

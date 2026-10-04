@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="ballGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="60%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </radialGradient>
+    <radialGradient id="beanGrad" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#b45309"/>
+      <stop offset="70%" stop-color="#78350f"/>
+      <stop offset="100%" stop-color="#451a03"/>
+    </radialGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Fundo Arredondado -->
+  <rect width="512" height="512" rx="112" fill="#0f172a"/>
+
+  <!-- Bola de Bingo -->
+  <circle cx="256" cy="256" r="190" fill="url(#ballGrad)" filter="url(#shadow)"/>
+  
+  <!-- Brilho no topo -->
+  <ellipse cx="210" cy="140" rx="90" ry="40" fill="#ffffff" opacity="0.35" transform="rotate(-15, 210, 140)"/>
+
+  <!-- Letra B do Bingo no topo da bola -->
+  <text x="256" y="160" font-family="system-ui, sans-serif" font-weight="900" font-size="52" fill="#ffffff" text-anchor="middle" letter-spacing="4">BINGO</text>
+
+  <!-- Círculo interno branco com o número -->
+  <circle cx="256" cy="275" r="105" fill="#ffffff" filter="url(#shadow)"/>
+  <text x="256" y="325" font-family="system-ui, sans-serif" font-weight="900" font-size="120" fill="#0f172a" text-anchor="middle">75</text>
+
+  <!-- Feijãozinho da Sorte sobreposto no cantinho -->
+  <g transform="translate(340, 330) rotate(-20)" filter="url(#shadow)">
+    <ellipse cx="40" cy="30" rx="48" ry="32" fill="url(#beanGrad)"/>
+    <ellipse cx="30" cy="20" rx="16" ry="7" fill="#ffffff" opacity="0.4" transform="rotate(-15, 30, 20)"/>
+  </g>
+</svg>

@@ -8,8 +8,9 @@ export function useVoiceAnnouncer() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceMuted, setVoiceMuted] = useState(false);
   const lastAnnouncedNum = useRef(null);
+  const currentAudioRef = useRef(null);
 
-  // Carregar vozes disponíveis no navegador
+  // Carregar vozes do navegador apenas para caso de fallback
   useEffect(() => {
     if (!('speechSynthesis' in window)) return;
 
@@ -17,14 +18,13 @@ export function useVoiceAnnouncer() {
       const allVoices = window.speechSynthesis.getVoices();
       setVoices(allVoices);
 
-      // Priorizar vozes pt-BR de qualidade natural (Google, Microsoft ou pt-BR)
       const ptBrVoices = allVoices.filter(v => v.lang === 'pt-BR' || v.lang === 'pt_BR');
       const preferred = ptBrVoices.find(v => 
         v.name.includes('Google') || 
         v.name.includes('Natural') || 
         v.name.includes('Luciana') || 
         v.name.includes('Maria')
-      ) || ptBrVoices[0] || allVoices.find(v => v.lang.startsWith('pt'));
+      ) || ptBrVoices[0];
 
       if (preferred) {
         setSelectedVoice(preferred);
@@ -38,47 +38,99 @@ export function useVoiceAnnouncer() {
   }, []);
 
   /**
-   * Fala a frase do sorteio de forma pausada e didática
+   * Fallback de síntese caso o áudio gravado não toque
+   */
+  const fallbackSpeechSynthesis = useCallback((num) => {
+    if (!('speechSynthesis' in window) || !num) return;
+    try {
+      window.speechSynthesis.cancel();
+      const phrase = getNarrationPhrase(num);
+      const utterance = new SpeechSynthesisUtterance(phrase);
+      utterance.lang = 'pt-BR';
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
+
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        musicSynthesizer.duck(true);
+      };
+
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        musicSynthesizer.duck(false);
+      };
+
+      utterance.onerror = () => {
+        setIsSpeaking(false);
+        musicSynthesizer.duck(false);
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } catch (err) {
+      console.warn('[VoiceFallback] Erro:', err);
+      setIsSpeaking(false);
+      musicSynthesizer.duck(false);
+    }
+  }, [selectedVoice]);
+
+  /**
+   * Fala a pedra do sorteio com a voz brasileira natural gravada em MP3
    */
   const speakNumber = useCallback((num, force = false) => {
     if (voiceMuted && !force) return;
-    if (!('speechSynthesis' in window)) return;
     if (!num) return;
 
     lastAnnouncedNum.current = num;
 
-    // Cancela falas anteriores pendentes para não acumular
-    window.speechSynthesis.cancel();
-
-    const phrase = getNarrationPhrase(num);
-    const utterance = new SpeechSynthesisUtterance(phrase);
-    utterance.lang = 'pt-BR';
-    
-    // Ritmo um pouco mais lento (0.88) para perfeita compreensão
-    utterance.rate = 0.88;
-    utterance.pitch = 1.05;
-
-    if (selectedVoice) {
-      utterance.voice = selectedVoice;
+    // 1. Interrompe áudio ou fala anterior
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      } catch {
+        // Ignora
+      }
+      currentAudioRef.current = null;
     }
 
-    utterance.onstart = () => {
-      setIsSpeaking(true);
-      musicSynthesizer.duck(true);
-    };
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
-    utterance.onend = () => {
+    // 2. Diminui a música de fundo e sinaliza início
+    musicSynthesizer.duck(true);
+    setIsSpeaking(true);
+
+    // 3. Toca o arquivo MP3 gravado em estúdio com voz brasileira (Francisca pt-BR)
+    const audioUrl = `/audio/balls/${num}.mp3`;
+    const audio = new Audio(audioUrl);
+    currentAudioRef.current = audio;
+
+    audio.onended = () => {
       setIsSpeaking(false);
       musicSynthesizer.duck(false);
+      currentAudioRef.current = null;
     };
 
-    utterance.onerror = () => {
-      setIsSpeaking(false);
-      musicSynthesizer.duck(false);
+    audio.onerror = (e) => {
+      console.warn(`[VoiceAnnouncer] Falha ao carregar ${audioUrl}, usando fallback:`, e);
+      currentAudioRef.current = null;
+      fallbackSpeechSynthesis(num);
     };
 
-    window.speechSynthesis.speak(utterance);
-  }, [selectedVoice, voiceMuted]);
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('[VoiceAnnouncer] Autoplay bloqueado ou erro, acionando fallback:', err);
+        currentAudioRef.current = null;
+        fallbackSpeechSynthesis(num);
+      });
+    }
+  }, [voiceMuted, fallbackSpeechSynthesis]);
 
   /**
    * Repete a narração da última bola sorteada
@@ -90,14 +142,25 @@ export function useVoiceAnnouncer() {
   }, [speakNumber]);
 
   /**
-   * Cancela qualquer fala em andamento
+   * Cancela qualquer fala ou áudio em andamento
    */
   const cancelSpeech = useCallback(() => {
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current.currentTime = 0;
+      } catch {
+        // Ignora
+      }
+      currentAudioRef.current = null;
+    }
+
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      musicSynthesizer.duck(false);
     }
+
+    setIsSpeaking(false);
+    musicSynthesizer.duck(false);
   }, []);
 
   return {

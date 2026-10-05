@@ -16,7 +16,7 @@ export function useBingoGame({
   const [drawnBalls, setDrawnBalls] = useState([]);
   const [markedCellIds, setMarkedCellIds] = useState(() => new Set());
   const [isPlaying, setIsPlaying] = useState(false);
-  const [autoSpeed, setAutoSpeed] = useState(10); // segundos por bola
+  const [autoSpeed, setAutoSpeed] = useState(7.5); // segundos por bola (25% mais rápido que 10s)
   const [autoMark, setAutoMark] = useState(false); // assistência automática
   const [autoBingo, setAutoBingo] = useState(false); // auto-bingo instantâneo
   const [timerProgress, setTimerProgress] = useState(0); // 0 a 100% para o anel da bola

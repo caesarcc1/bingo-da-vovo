@@ -191,9 +191,9 @@ export function SettingsModal({
             </div>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { sec: 14, label: 'Bem Pausado (14s)' },
-                { sec: 10, label: 'Normal (10s)' },
-                { sec: 7, label: 'Mais Rápido (7s)' }
+                { sec: 10, label: 'Pausado (10s)' },
+                { sec: 7.5, label: 'Normal (7,5s)' },
+                { sec: 5.5, label: 'Mais Rápido (5,5s)' }
               ].map((sp) => (
                 <button
                   key={sp.sec}

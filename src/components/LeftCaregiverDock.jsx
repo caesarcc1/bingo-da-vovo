@@ -49,6 +49,7 @@ export function LeftCaregiverDock({
             onInitMic={voiceProps.initMicrophone}
             onPushToTalkStart={() => {}}
             onPushToTalkEnd={() => {}}
+            peerCount={voiceProps.peerCount}
           />
         </div>
       )}

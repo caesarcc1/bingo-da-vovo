@@ -254,6 +254,7 @@ export function MobileNetoLayout({
             onInitMic={voiceProps.initMicrophone}
             onPushToTalkStart={voiceProps.handlePushToTalkStart}
             onPushToTalkEnd={voiceProps.handlePushToTalkEnd}
+            peerCount={voiceProps.peerCount}
           />
         </div>
 

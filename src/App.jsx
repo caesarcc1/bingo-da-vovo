@@ -262,6 +262,9 @@ export default function App() {
   const handleFirstInteraction = () => {
     soundFX.init();
     musicSynthesizer.init();
+    if (voiceProps?.unlockAudio) {
+      voiceProps.unlockAudio();
+    }
   };
 
   // Alternar Música de fundo
@@ -283,7 +286,14 @@ export default function App() {
     handleFirstInteraction();
     resetGame();
     setCurrentScreen('game');
-    setIsPreparing(true);
+
+    if (isVovo) {
+      emitStartGame();
+      setIsPreparing(true);
+      if (!voiceProps.hasMicPermission) {
+        voiceProps.initMicrophone();
+      }
+    }
 
     if (musicPlaying) {
       musicSynthesizer.start();

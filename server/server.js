@@ -100,6 +100,10 @@ io.on('connection', (socket) => {
     io.to(roomId).emit('room-users', cleanUserList);
     socket.emit('game-state-sync', room.gameState);
 
+    // Envia lista de participantes de voz já presentes para o novo membro
+    const existingSockets = Array.from(room.socketToUser.keys()).filter(id => id !== socket.id);
+    socket.emit('existing-voice-peers', existingSockets);
+
     // Notifica outros participantes para WebRTC de voz
     socket.to(roomId).emit('user-joined-voice', {
       socketId: socket.id,

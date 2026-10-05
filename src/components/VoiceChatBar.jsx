@@ -11,7 +11,8 @@ export function VoiceChatBar({
   hasMicPermission,
   onInitMic,
   onPushToTalkStart,
-  onPushToTalkEnd
+  onPushToTalkEnd,
+  peerCount = 0
 }) {
   return (
     <div className="flex items-center gap-2 bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-slate-700/80 shadow-lg select-none">
@@ -20,8 +21,8 @@ export function VoiceChatBar({
         <button
           onClick={onInitMic}
           type="button"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow active:scale-95"
-          title="Ativar microfone para falar com a família"
+          className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-all shadow active:scale-95 animate-pulse"
+          title="Ativar microfone para conversar com a família"
         >
           <Mic className="w-3.5 h-3.5" />
           <span>Ativar Microfone</span>
@@ -128,6 +129,14 @@ export function VoiceChatBar({
           <span className="w-1 h-4 bg-emerald-300 rounded-full animate-pulse" style={{ animationDelay: '150ms' }} />
           <span className="w-1 h-2 bg-emerald-400 rounded-full animate-pulse" style={{ animationDelay: '300ms' }} />
         </div>
+      )}
+
+      {/* Indicador de Membros Conectados na Voz */}
+      {hasMicPermission && peerCount > 0 && (
+        <span className="text-[10px] text-emerald-400 font-bold hidden sm:inline-flex items-center gap-1 ml-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>{peerCount} na voz</span>
+        </span>
       )}
     </div>
   );

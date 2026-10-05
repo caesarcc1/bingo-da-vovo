@@ -1,10 +1,19 @@
 services:
-  bingo-server:
-    build: .
-    container_name: bingo-da-vovo-server
+  bingo-app:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    container_name: bingo-app
     restart: always
     ports:
       - "3001:3001"
     environment:
       - PORT=3001
       - NODE_ENV=production
+    networks:
+      - vetsanare-network
+
+networks:
+  vetsanare-network:
+    name: vetsanare_vetsanare-net
+    external: true

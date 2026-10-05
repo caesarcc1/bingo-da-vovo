@@ -1,14 +1,26 @@
-// Servidor Node.js + Socket.io + Sinalizador WebRTC para o Bingo da Família na Hetzner
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const distPath = fs.existsSync(path.resolve(__dirname, './dist'))
+  ? path.resolve(__dirname, './dist')
+  : path.resolve(__dirname, '../dist');
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(cors({ origin: '*' }));
 app.use(express.json());
+
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 const io = new Server(server, {
   cors: {
@@ -142,6 +154,12 @@ io.on('connection', (socket) => {
     }
   });
 });
+
+if (fs.existsSync(distPath)) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`👵 Servidor Bingo da Família rodando na porta ${PORT}`);

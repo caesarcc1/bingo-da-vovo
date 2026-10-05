@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
 
-const HETZNER_SERVER_URL = import.meta.env.VITE_SOCKET_URL || 'http://178.156.222.232:3001';
+const HETZNER_SERVER_URL = import.meta.env.VITE_SOCKET_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? window.location.origin : 'http://178.156.222.232:3001');
 
 export function useFamilySocket({
   profile,

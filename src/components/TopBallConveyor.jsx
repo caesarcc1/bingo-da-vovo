@@ -1,6 +1,6 @@
 import React from 'react';
 import { getBingoLetter, BINGO_COLORS } from '../utils/numberWords';
-import { Volume2, VolumeX, Play, Pause, ArrowLeft } from 'lucide-react';
+import { Volume2, Play, Pause, ArrowLeft } from 'lucide-react';
 
 export function TopBallConveyor({
   currentBall,
@@ -18,23 +18,24 @@ export function TopBallConveyor({
   // Bolas anteriores (últimas 4)
   const previousBalls = drawnBalls.slice(0, -1).slice(-4).reverse();
 
-  // Cálculo do anel circular de contagem da próxima bola (raio 46, circunferência ~289)
+  // Cálculo do anel circular de contagem da próxima bola
   const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
-    <header className="w-full bg-slate-900/90 backdrop-blur-md border-b-2 border-slate-700/60 py-2 px-3 sm:px-6 flex items-center justify-between gap-3 shadow-lg select-none z-20">
-      {/* Lado Esquerdo: Botão Voltar (com confirmação) + Pausa + Contador */}
-      <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+    <header className="w-full bg-slate-900/90 backdrop-blur-md border-b-2 border-slate-700/60 py-2.5 px-3 sm:px-6 flex items-center justify-between gap-3 shadow-lg select-none z-20">
+      {/* Lado Esquerdo: Botão Voltar (50% Maior) + Pausa + Contador */}
+      <div className="flex items-center gap-2.5 sm:gap-4 flex-shrink-0">
+        {/* Botão VOLTAR (50% Maior e mais fácil de tocar) */}
         <button
           onClick={onBackToHome}
           type="button"
-          className="p-2 sm:px-3 sm:py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all active:scale-95"
+          className="py-3 px-4 sm:py-3.5 sm:px-6 rounded-2xl bg-slate-800 hover:bg-slate-700 border-2 border-amber-400/80 text-amber-300 hover:text-white font-black text-base sm:text-xl flex items-center gap-2 transition-all active:scale-95 shadow-md"
           title="Voltar para a Tela Inicial"
         >
-          <ArrowLeft className="w-5 h-5 text-amber-400" />
-          <span className="hidden sm:inline">Início</span>
+          <ArrowLeft className="w-6 h-6 sm:w-7 sm:h-7 text-amber-400" />
+          <span>Voltar</span>
         </button>
 
         {/* Botão Pausar / Continuar Sorteio */}
@@ -42,10 +43,10 @@ export function TopBallConveyor({
           onClick={onTogglePlay}
           type="button"
           className={`
-            p-2 sm:px-3 sm:py-2 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-1.5 shadow-md transition-all active:scale-95
+            py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-2xl font-black text-xs sm:text-base flex items-center gap-1.5 shadow-md transition-all active:scale-95 border
             ${isPlaying
-              ? 'bg-amber-600 hover:bg-amber-700 text-white'
-              : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+              ? 'bg-amber-600 hover:bg-amber-700 text-white border-amber-500'
+              : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-500'
             }
           `}
         >
@@ -62,7 +63,7 @@ export function TopBallConveyor({
           )}
         </button>
 
-        <span className="text-xs font-black text-slate-400 hidden md:inline-block ml-1">
+        <span className="text-xs sm:text-sm font-black text-slate-400 hidden md:inline-block ml-1">
           {drawnBalls.length}/75 Bolas
         </span>
       </div>

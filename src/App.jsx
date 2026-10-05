@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useBingoGame } from './hooks/useBingoGame';
 import { useVoiceAnnouncer } from './hooks/useVoiceAnnouncer';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -9,6 +9,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { HomeScreen } from './components/HomeScreen';
 import { CountdownOverlay } from './components/CountdownOverlay';
 import { TopBallConveyor } from './components/TopBallConveyor';
+import { LeftCaregiverDock } from './components/LeftCaregiverDock';
 import { BingoCard } from './components/BingoCard';
 import { SideControls } from './components/SideControls';
 import { VictoryModal } from './components/VictoryModal';
@@ -29,12 +30,14 @@ export default function App() {
     localStorage.setItem('vovo_bingo_name', vovoName);
   }, [vovoName]);
 
-  // Modais
+  // Modais e Referência para o Botão Voltar do Android
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showBingoCelebration, setShowBingoCelebration] = useState(false);
+  const activeModalRef = useRef(null);
 
-  // Música e Som (Ligada por padrão para tocar ao iniciar)
+  // Música e Som (Ligada por padrão)
   const [musicPlaying, setMusicPlaying] = useState(() => {
     const saved = localStorage.getItem('vovo_music_enabled');
     return saved !== null ? saved === 'true' : true;
@@ -72,8 +75,6 @@ export default function App() {
     winState,
     isBingoReadyToClaim,
     claimBingo,
-    showBingoCelebration,
-    setShowBingoCelebration,
     drawNextBall,
     toggleCell,
     resetGame
@@ -83,15 +84,67 @@ export default function App() {
     },
     onWin: () => {
       cancelSpeech();
+      activeModalRef.current = 'victory';
+      setShowBingoCelebration(true);
     }
   });
 
-  // Prevenir fechamento acidental via botão voltar do Android (History Trap)
+  // Funções para gerenciar abertura e fechamento de modais com histórico do Android
+  const openModal = (modalName, setOpenFn) => {
+    activeModalRef.current = modalName;
+    window.history.pushState({ modal: modalName }, '', window.location.href);
+    setOpenFn(true);
+  };
+
+  const closeModal = (modalName, setOpenFn) => {
+    if (activeModalRef.current === modalName) {
+      activeModalRef.current = null;
+    }
+    setOpenFn(false);
+  };
+
+  // Botão Voltar do Tablet (Popstate): Fecha apenas a janela aberta sem sair do jogo
   useEffect(() => {
     window.history.pushState(null, '', window.location.href);
-    const handlePopState = () => {
-      window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = (e) => {
+      const modal = activeModalRef.current;
+
+      if (modal === 'settings') {
+        setIsSettingsOpen(false);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
+      if (modal === 'guide') {
+        setIsFamilyGuideOpen(false);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
+      if (modal === 'exit') {
+        // Se já estava com o modal de saída aberto e apertou voltar no tablet, cancela a saída
+        setShowExitConfirm(false);
+        setIsPlaying(true);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
+      if (modal === 'victory') {
+        setShowBingoCelebration(false);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
+      // Se nenhum modal estiver aberto e estiver no jogo, pausa e pergunta se deseja sair
       if (currentScreen === 'game') {
+        window.history.pushState(null, '', window.location.href);
+        setIsPlaying(false);
+        activeModalRef.current = 'exit';
         setShowExitConfirm(true);
       }
     };
@@ -100,7 +153,7 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [currentScreen]);
 
-  // Prevenir recarregar ou fechar a aba acidentalmente durante uma partida
+  // Prevenir recarregar a aba acidentalmente durante uma partida
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (currentScreen === 'game' && drawnBalls.length > 0) {
@@ -140,7 +193,6 @@ export default function App() {
     setCurrentScreen('game');
     setIsPreparing(true);
 
-    // Inicia a música de fundo automaticamente no gesto de clique
     if (musicPlaying) {
       musicSynthesizer.start();
     }
@@ -149,28 +201,32 @@ export default function App() {
   // Final da contagem 3-2-1 de preparação
   const handleCountdownComplete = () => {
     setIsPreparing(false);
-    drawNextBall(); // sorteia a primeira bola imediatamente
-    setIsPlaying(true); // inicia o ciclo automático
+    drawNextBall();
+    setIsPlaying(true);
 
     if (musicPlaying) {
       musicSynthesizer.start();
     }
   };
 
-  // Solicitar retorno ao menu inicial com proteção
-  const handleRequestBackToHome = () => {
-    if (drawnBalls.length === 0) {
-      setCurrentScreen('home');
-    } else {
-      setShowExitConfirm(true);
-    }
+  // Solicitar saída (pausa o jogo automaticamente e abre o modal de confirmação)
+  const handleRequestExit = () => {
+    setIsPlaying(false); // Pausa o jogo imediatamente
+    openModal('exit', setShowExitConfirm);
   };
 
+  // Confirmar saída para a tela inicial
   const handleConfirmExit = () => {
     cancelSpeech();
     setIsPlaying(false);
-    setShowExitConfirm(false);
+    closeModal('exit', setShowExitConfirm);
     setCurrentScreen('home');
+  };
+
+  // Cancelar saída e retornar ao jogo
+  const handleCancelExit = () => {
+    closeModal('exit', setShowExitConfirm);
+    setIsPlaying(true); // Retoma o jogo automaticamente
   };
 
   return (
@@ -192,12 +248,12 @@ export default function App() {
         <HomeScreen
           vovoName={vovoName}
           onStartGame={handleStartGameFromHome}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
+          onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
+          onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
         />
       )}
 
-      {/* 3. Tela da Partida (Estilo Play Store com Controles na Lateral) */}
+      {/* 3. Tela da Partida (Estilo Play Store com Controles nas Laterais) */}
       {currentScreen === 'game' && (
         <div className="h-full w-full flex flex-col justify-between overflow-hidden relative">
           {/* Overlay de Preparação e Contagem (3, 2, 1) */}
@@ -208,7 +264,7 @@ export default function App() {
             />
           )}
 
-          {/* Topo: Esteira de Bolas Rolando (Play Store Ball Hopper) */}
+          {/* Topo: Esteira de Bolas com Botão VOLTAR 50% Maior */}
           <TopBallConveyor
             currentBall={currentBall}
             drawnBalls={drawnBalls}
@@ -216,13 +272,19 @@ export default function App() {
             isSpeaking={isSpeaking}
             isPlaying={isPlaying}
             onTogglePlay={() => setIsPlaying(!isPlaying)}
-            onBackToHome={handleRequestBackToHome}
+            onBackToHome={handleRequestExit}
             progressPercent={timerProgress}
           />
 
-          {/* Área Central: Cartela Completa 5x5 + Coluna da Lateral Direita */}
-          <main className="flex-1 w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-6 p-2 sm:p-4 min-h-0 overflow-hidden">
-            {/* Cartela no Centro (100% Visível sem Cortes) */}
+          {/* Área Central: Dock Esquerdo + Cartela Completa + Coluna Direita */}
+          <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-4 p-2 sm:p-3 min-h-0 overflow-hidden">
+            {/* 1. Lateral Esquerda: Botões pequenos discretos para cuidadores */}
+            <LeftCaregiverDock
+              onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
+              onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
+            />
+
+            {/* 2. Centro: Cartela 100% Visível sem Cortes */}
             <div className="flex-1 h-full flex items-center justify-center min-h-0 w-full">
               <BingoCard
                 card={card}
@@ -234,7 +296,7 @@ export default function App() {
               />
             </div>
 
-            {/* Controles na Lateral Direita: BINGO, Nova Cartela, Música e Configurações */}
+            {/* 3. Lateral Direita: BINGO, Nova Cartela, Música e Botão Grande SAIR */}
             <SideControls
               isBingoReady={isBingoReadyToClaim}
               onClaimBingo={claimBingo}
@@ -244,39 +306,43 @@ export default function App() {
                 resetGame();
                 setIsPreparing(true);
               }}
-              onOpenSettings={() => setIsSettingsOpen(true)}
-              onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
+              onRequestExit={handleRequestExit}
               musicPlaying={musicPlaying}
               onToggleMusic={handleToggleMusic}
+              onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
+              onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
             />
           </main>
         </div>
       )}
 
-      {/* Modal de Confirmação para Voltar ao Menu */}
+      {/* Modal de Confirmação para Sair do Jogo */}
       {showExitConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-pop-in">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-4 border-amber-400">
-            <h3 className="text-2xl font-black text-slate-900 mb-2">
-              Voltar ao Início?
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-pop-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 text-center shadow-2xl border-4 border-amber-400">
+            <h3 className="text-2xl sm:text-3xl font-black text-slate-900 mb-2">
+              Deseja mesmo sair?
             </h3>
-            <p className="text-slate-600 font-medium mb-6">
-              Sua partida atual será encerrada. Deseja mesmo voltar para a tela inicial?
+            <p className="text-slate-600 font-bold text-base mb-6">
+              O jogo foi pausado para você não perder nada.
             </p>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
+              {/* Botão Não (voltar ao jogo) */}
               <button
-                onClick={() => setShowExitConfirm(false)}
+                onClick={handleCancelExit}
                 type="button"
-                className="py-3 px-4 rounded-2xl font-black text-slate-800 bg-slate-200 hover:bg-slate-300 active:scale-95"
+                className="flex-1 py-4 px-4 rounded-2xl font-black text-base sm:text-lg text-emerald-950 bg-emerald-100 hover:bg-emerald-200 border-3 border-emerald-500 active:scale-95 transition-all shadow-sm"
               >
-                Continuar Jogando
+                Não (voltar ao jogo)
               </button>
+
+              {/* Botão Sim */}
               <button
                 onClick={handleConfirmExit}
                 type="button"
-                className="py-3 px-4 rounded-2xl font-black text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md"
+                className="py-4 px-6 rounded-2xl font-black text-base sm:text-lg text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md transition-all"
               >
-                Sim, Voltar
+                Sim
               </button>
             </div>
           </div>
@@ -286,7 +352,7 @@ export default function App() {
       {/* Modais Globais */}
       <VictoryModal
         isOpen={showBingoCelebration}
-        onClose={() => setShowBingoCelebration(false)}
+        onClose={() => closeModal('victory', setShowBingoCelebration)}
         onNewGame={() => {
           cancelSpeech();
           resetGame();
@@ -297,12 +363,12 @@ export default function App() {
 
       <FamilyGuideModal
         isOpen={isFamilyGuideOpen}
-        onClose={() => setIsFamilyGuideOpen(false)}
+        onClose={() => closeModal('guide', setIsFamilyGuideOpen)}
       />
 
       <SettingsModal
         isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
+        onClose={() => closeModal('settings', setIsSettingsOpen)}
         vovoName={vovoName}
         setVovoName={setVovoName}
         autoSpeed={autoSpeed}

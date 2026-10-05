@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { RotateCcw, Settings, ShieldAlert, Maximize, Minimize, Music } from 'lucide-react';
+import { RotateCcw, LogOut, Music, Settings, ShieldAlert, Maximize } from 'lucide-react';
 import { BingoClaimButton } from './BingoClaimButton';
 
 export function SideControls({
@@ -7,14 +7,14 @@ export function SideControls({
   onClaimBingo,
   markedCount,
   onResetGame,
-  onOpenSettings,
-  onOpenFamilyGuide,
+  onRequestExit,
   musicPlaying,
-  onToggleMusic
+  onToggleMusic,
+  onOpenSettings,
+  onOpenFamilyGuide
 }) {
   const [resetHoldProgress, setResetHoldProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const holdIntervalRef = useRef(null);
   const holdStartTimeRef = useRef(null);
 
@@ -46,14 +46,6 @@ export function SideControls({
         setTimeout(() => setShowToast(false), 3000);
       }
       setResetHoldProgress(0);
-    }
-  };
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {});
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
     }
   };
 
@@ -100,7 +92,7 @@ export function SideControls({
         </span>
       </button>
 
-      {/* 3. Botão Rápido de Música (Acesso Direto em 1 Clique) */}
+      {/* 3. Botão Rápido de Música */}
       <button
         onClick={onToggleMusic}
         type="button"
@@ -117,36 +109,32 @@ export function SideControls({
         <span>{musicPlaying ? 'Música: Tocando' : 'Música: Pausada'}</span>
       </button>
 
-      {/* 4. Painel de Ações Secundárias na Lateral */}
-      <div className="grid grid-cols-2 md:grid-cols-1 gap-2 w-full">
-        {/* Opções e Sons */}
+      {/* 4. GRANDE BOTÃO SAIR (Pausa o jogo e pede confirmação) */}
+      <button
+        onClick={onRequestExit}
+        type="button"
+        className="w-full flex items-center justify-center gap-2.5 py-3.5 sm:py-4 px-4 rounded-2xl font-black text-base sm:text-lg text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-lg border-b-4 border-rose-800 select-none transition-all"
+        title="Sair da partida"
+      >
+        <LogOut className="w-5 h-5 sm:w-6 sm:h-6" />
+        <span>Sair do Jogo</span>
+      </button>
+
+      {/* Em telas estreitas/verticais onde o dock da esquerda fica oculto */}
+      <div className="flex md:hidden items-center justify-center gap-2 w-full pt-1">
         <button
           onClick={onOpenSettings}
           type="button"
-          className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm shadow active:scale-95 transition-all"
+          className="flex-1 py-2 px-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-300 text-xs font-bold"
         >
-          <Settings className="w-4 h-4 text-amber-400" />
-          <span>Opções & Temas</span>
+          Opções
         </button>
-
-        {/* Dicas da Família / Blindagem */}
         <button
           onClick={onOpenFamilyGuide}
           type="button"
-          className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm shadow active:scale-95 transition-all"
+          className="flex-1 py-2 px-2 rounded-xl bg-slate-800 border border-slate-600 text-slate-300 text-xs font-bold"
         >
-          <ShieldAlert className="w-4 h-4 text-emerald-400" />
-          <span>Blindar Tablet</span>
-        </button>
-
-        {/* Tela Cheia */}
-        <button
-          onClick={toggleFullscreen}
-          type="button"
-          className="col-span-2 md:col-span-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm shadow active:scale-95 transition-all"
-        >
-          {isFullscreen ? <Minimize className="w-4 h-4 text-blue-400" /> : <Maximize className="w-4 h-4 text-blue-400" />}
-          <span>{isFullscreen ? 'Sair Tela Cheia' : 'Tela Cheia'}</span>
+          Blindar
         </button>
       </div>
     </aside>

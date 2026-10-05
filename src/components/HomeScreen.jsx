@@ -18,7 +18,7 @@ export function HomeScreen({
 
   return (
     <div
-      className="h-[100dvh] w-screen flex flex-col items-center justify-between p-3 sm:p-6 select-none text-center relative overflow-hidden"
+      className="h-full w-full min-h-screen-safe flex flex-col items-center justify-between p-3 sm:p-6 select-none text-center relative overflow-hidden"
       style={{
         background: 'radial-gradient(circle at 50% 20%, #1e40af 0%, #1e3a8a 35%, #0f172a 75%, #020617 100%)'
       }}
@@ -62,7 +62,15 @@ export function HomeScreen({
           </div>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 drop-shadow-lg tracking-tight">
+        <h1
+          className="text-4xl sm:text-6xl md:text-7xl font-black drop-shadow-lg tracking-tight"
+          style={{
+            color: '#fbbf24',
+            backgroundImage: 'linear-gradient(to right, #fde68a, #facc15, #f59e0b)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
           {vovoName}
         </h1>
 

@@ -46,7 +46,7 @@ export function MobileNetoLayout({
   const ballStyle = currentLetter && BINGO_COLORS[currentLetter] ? BINGO_COLORS[currentLetter] : null;
 
   return (
-    <div className="h-[100dvh] w-screen flex flex-col justify-between overflow-hidden bg-slate-950 text-white select-none">
+    <div className="h-full w-full min-h-screen-safe flex flex-col justify-between overflow-hidden bg-slate-950 text-white select-none">
       {/* 1. Header Compacto Mobile */}
       <header className="px-3 pt-2 pb-1.5 bg-slate-900/90 border-b border-slate-800 flex items-center justify-between gap-2 flex-shrink-0">
         <button

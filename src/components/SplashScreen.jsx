@@ -27,7 +27,7 @@ export function SplashScreen({ onFinish }) {
         ${fading ? 'opacity-0' : 'opacity-100'}
       `}
       style={{
-        background: 'radial-gradient(ellipse at center, #1e293b 0%, #0f172a 100%)'
+        background: 'radial-gradient(circle at center, #1e40af 0%, #1e3a8a 35%, #0f172a 75%, #020617 100%)'
       }}
     >
       {/* Efeito de Brilho de Fundo */}
@@ -79,7 +79,15 @@ export function SplashScreen({ onFinish }) {
           <Sparkles className="w-6 h-6 text-amber-400 animate-spin" style={{ animationDuration: '4s' }} />
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-500 drop-shadow-lg tracking-tight">
+        <h1
+          className="text-4xl sm:text-6xl font-black drop-shadow-lg tracking-tight"
+          style={{
+            color: '#fbbf24',
+            backgroundImage: 'linear-gradient(to right, #fde68a, #facc15, #f59e0b)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent'
+          }}
+        >
           Bingo da Vovó
         </h1>
 

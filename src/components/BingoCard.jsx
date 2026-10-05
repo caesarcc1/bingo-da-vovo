@@ -14,7 +14,10 @@ export function BingoCard({
   const winningCellIds = winState?.winningCellIds || new Set();
 
   return (
-    <div className="flex flex-col h-full max-h-[min(650px,calc(100dvh-130px))] w-full max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-amber-400 overflow-hidden select-none ring-4 ring-amber-400/20">
+    <div
+      className="flex flex-col h-full w-full max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-amber-400 overflow-hidden select-none ring-4 ring-amber-400/20"
+      style={{ maxHeight: 'min(620px, calc(100vh - 120px))' }}
+    >
       {/* Cabeçalho da Cartela com Nome Carinhoso */}
       <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 py-1.5 sm:py-2 px-4 text-center text-white shadow-sm flex items-center justify-center gap-2 flex-shrink-0">
         <span className="text-xs sm:text-base md:text-lg font-black tracking-wider uppercase drop-shadow">

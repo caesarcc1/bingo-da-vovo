@@ -22,7 +22,10 @@ export function LeftCaregiverDock({
   };
 
   return (
-    <aside className="hidden md:flex flex-col justify-between items-center w-16 sm:w-18 lg:w-20 h-full max-h-[min(650px,calc(100dvh-130px))] py-2.5 px-1 bg-slate-950/75 backdrop-blur-md rounded-3xl border border-amber-500/30 select-none z-10 flex-shrink-0 shadow-2xl overflow-hidden">
+    <aside
+      className="hidden md:flex flex-col justify-between items-center w-16 sm:w-18 lg:w-20 h-full py-2.5 px-1 bg-slate-950/75 backdrop-blur-md rounded-3xl border border-amber-500/30 select-none z-10 flex-shrink-0 shadow-2xl overflow-hidden"
+      style={{ maxHeight: 'min(620px, calc(100vh - 120px))' }}
+    >
       {/* 1. Lista Vertical Ultra-Compacta de Familiares (Avatares Empilhados) */}
       <div className="flex-1 w-full overflow-hidden flex flex-col items-center min-h-0">
         <FamilyMembersList

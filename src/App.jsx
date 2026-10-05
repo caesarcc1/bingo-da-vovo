@@ -360,7 +360,7 @@ export default function App() {
     <div
       onClick={handleFirstInteraction}
       onTouchStart={handleFirstInteraction}
-      className="h-[100dvh] w-screen bg-slate-950 text-slate-800 flex flex-col justify-between overflow-hidden select-none relative"
+      className="h-full w-full min-h-screen-safe bg-slate-950 text-slate-100 flex flex-col justify-between overflow-hidden select-none relative"
       style={{
         background: 'radial-gradient(circle at 50% 15%, #1e40af 0%, #1e3a8a 35%, #0f172a 75%, #020617 100%)'
       }}

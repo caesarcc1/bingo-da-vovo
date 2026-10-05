@@ -14,6 +14,17 @@ export function useFamilySocket({
   const [roomUsers, setRoomUsers] = useState([]);
   const socketRef = useRef(null);
 
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const onRemoteBallDrawnRef = useRef(onRemoteBallDrawn);
+  onRemoteBallDrawnRef.current = onRemoteBallDrawn;
+  const onRemoteBingoClaimedRef = useRef(onRemoteBingoClaimed);
+  onRemoteBingoClaimedRef.current = onRemoteBingoClaimed;
+  const onGameStateSyncRef = useRef(onGameStateSync);
+  onGameStateSyncRef.current = onGameStateSync;
+  const onUserSpeakingRef = useRef(onUserSpeaking);
+  onUserSpeakingRef.current = onUserSpeaking;
+
   useEffect(() => {
     // Inicia conexão resiliente com o servidor Hetzner
     const socket = io(HETZNER_SERVER_URL, {
@@ -27,7 +38,7 @@ export function useFamilySocket({
 
     socket.on('connect', () => {
       setIsConnected(true);
-      socket.emit('join-room', { roomId: 'familia', profile });
+      socket.emit('join-room', { roomId: 'familia', profile: profileRef.current });
     });
 
     socket.on('disconnect', () => {
@@ -43,49 +54,49 @@ export function useFamilySocket({
     });
 
     socket.on('ball-drawn', ({ ball, gameState }) => {
-      if (onRemoteBallDrawn) onRemoteBallDrawn(ball, gameState);
+      if (onRemoteBallDrawnRef.current) onRemoteBallDrawnRef.current(ball, gameState);
     });
 
     socket.on('bingo-claimed', ({ winner, podiumWinners }) => {
-      if (onRemoteBingoClaimed) onRemoteBingoClaimed(winner, podiumWinners);
+      if (onRemoteBingoClaimedRef.current) onRemoteBingoClaimedRef.current(winner, podiumWinners);
     });
 
     socket.on('game-state-sync', (gameState) => {
-      if (onGameStateSync) onGameStateSync(gameState);
+      if (onGameStateSyncRef.current) onGameStateSyncRef.current(gameState);
     });
 
     socket.on('user-speaking', ({ userId, isSpeaking }) => {
       setRoomUsers(prev =>
         prev.map(u => (u.id === userId ? { ...u, isSpeaking } : u))
       );
-      if (onUserSpeaking) onUserSpeaking(userId, isSpeaking);
+      if (onUserSpeakingRef.current) onUserSpeakingRef.current(userId, isSpeaking);
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [profile.id]);
+  }, []); // Conecta uma única vez ao montar
 
   // Transmitir pedra sorteada
   const emitBallDrawn = useCallback((ball) => {
-    if (socketRef.current && isConnected) {
+    if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('ball-drawn', { roomId: 'familia', ball });
     }
-  }, [isConnected]);
+  }, []);
 
   // Transmitir BINGO batido
   const emitClaimBingo = useCallback((winner) => {
-    if (socketRef.current && isConnected) {
+    if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('claim-bingo', { roomId: 'familia', winner });
     }
-  }, [isConnected]);
+  }, []);
 
   // Transmitir quem está falando
   const emitSpeakingState = useCallback((isSpeaking) => {
-    if (socketRef.current && isConnected) {
+    if (socketRef.current && socketRef.current.connected) {
       socketRef.current.emit('speaking-state', { roomId: 'familia', isSpeaking });
     }
-  }, [isConnected]);
+  }, []);
 
   return {
     isConnected,

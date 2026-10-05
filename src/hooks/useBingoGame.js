@@ -43,6 +43,20 @@ export function useBingoGame({
   const podiumCountRef = useRef(0);
   podiumCountRef.current = podiumWinners.length;
 
+  const onWinRef = useRef(onWin);
+  onWinRef.current = onWin;
+  const onBallDrawnRef = useRef(onBallDrawn);
+  onBallDrawnRef.current = onBallDrawn;
+  const onVirtualWinRef = useRef(onVirtualWin);
+  onVirtualWinRef.current = onVirtualWin;
+  const onGameOverRef = useRef(onGameOver);
+  onGameOverRef.current = onGameOver;
+  const autoBingoRef = useRef(autoBingo);
+  autoBingoRef.current = autoBingo;
+  const winStateRef = useRef(winState);
+  winStateRef.current = winState;
+  const claimBingoRef = useRef(null);
+
   const currentBall = drawnBalls.length > 0 ? drawnBalls[drawnBalls.length - 1] : null;
 
   /**
@@ -66,8 +80,8 @@ export function useBingoGame({
 
       // Efeito sonoro do globo e notificação para voz
       soundFX.playBallDrawn();
-      if (onBallDrawn) {
-        onBallDrawn(nextBall);
+      if (onBallDrawnRef.current) {
+        onBallDrawnRef.current(nextBall);
       }
 
       // Se assistência automática estiver ligada para a vovó
@@ -113,7 +127,7 @@ export function useBingoGame({
               setIsPlaying(false);
               setTimeout(() => {
                 setIsGameOver(true);
-                if (onGameOver) onGameOver(updatedPodium);
+                if (onGameOverRef.current) onGameOverRef.current(updatedPodium);
               }, 1200);
             }
 
@@ -122,7 +136,7 @@ export function useBingoGame({
 
           // Mostra banner animado do vencedor virtual
           setLatestVirtualWinner(newWinners[0]);
-          if (onVirtualWin) onVirtualWin(newWinners[0]);
+          if (onVirtualWinRef.current) onVirtualWinRef.current(newWinners[0]);
         }
 
         return updatedPlayers;
@@ -130,7 +144,7 @@ export function useBingoGame({
 
       return remaining;
     });
-  }, [autoMark, onBallDrawn, onGameOver, onVirtualWin]);
+  }, [autoMark]);
 
   /**
    * Timer contínuo para o anel de progresso da bola e sorteio automático
@@ -192,21 +206,26 @@ export function useBingoGame({
     const place = Math.min(3, podiumWinners.length + 1);
     setVovoWinPlace(place);
 
+    const pattern = winStateRef.current?.patternDescription || 'Bingo';
     const winnerObj = {
       id: 'local_player',
       name: playerName || 'Vovó',
       winPlace: place,
-      winPattern: winState.patternDescription || 'Bingo'
+      winPattern: pattern
     };
 
     setPodiumWinners(prev => [...prev, winnerObj]);
     soundFX.playBingoFanfare();
 
-    if (onWin) onWin(place, winState.patternDescription, winnerObj);
-  }, [onWin, podiumWinners.length, winState.patternDescription, playerName]);
+    if (onWinRef.current) {
+      onWinRef.current(place, pattern, winnerObj);
+    }
+  }, [podiumWinners.length, playerName]);
+
+  claimBingoRef.current = claimBingo;
 
   /**
-   * Recalcular vitórias na cartela
+   * Recalcular vitórias na cartela (apenas quando a cartela ou as pedras marcadas mudarem)
    */
   useEffect(() => {
     const wins = checkBingoWins(card, markedCellIds);
@@ -215,14 +234,14 @@ export function useBingoGame({
     // Se completou qualquer padrão válido (linha, coluna, diagonal, 4 pontas)
     if (wins.isBingo && !prevWinBingoRef.current) {
       setIsBingoReadyToClaim(true);
-      if (autoBingo) {
+      if (autoBingoRef.current && claimBingoRef.current) {
         const timer = setTimeout(() => {
-          claimBingo();
+          claimBingoRef.current();
         }, 350);
         return () => clearTimeout(timer);
       }
     }
-  }, [card, markedCellIds, autoBingo, claimBingo]);
+  }, [card, markedCellIds]);
 
   /**
    * Processar pedra vinda de outro jogador pela sala (Multiplayer)

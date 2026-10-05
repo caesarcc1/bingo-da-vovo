@@ -1,11 +1,11 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Layers, X, ExternalLink } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Layers } from 'lucide-react';
 import { getBingoLetter, BINGO_COLORS } from '../utils/numberWords';
 
 export function FloatingPipWindow({
   currentBall,
   card,
-  markedCellIds,
+  markedCellIds = new Set(),
   roomUsers = [],
   isAutoMark = false
 }) {
@@ -13,106 +13,110 @@ export function FloatingPipWindow({
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Renderiza continuamente a minicartela e a bola atual no canvas para o stream PiP
-  useEffect(() => {
+  const drawFrame = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    let animationFrameId;
+    // 1. Fundo Escuro Moderno
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    const render = () => {
-      // 1. Fundo Escuro Moderno
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 2. Desenhar Bola Atual no lado esquerdo
+    const letter = currentBall ? getBingoLetter(currentBall) : '-';
+    const color = currentBall && BINGO_COLORS[letter] ? BINGO_COLORS[letter].badge : '#475569';
 
-      // 2. Desenhar Bola Atual no lado esquerdo
-      const letter = currentBall ? getBingoLetter(currentBall) : '-';
-      const color = currentBall && BINGO_COLORS[letter] ? BINGO_COLORS[letter].badge : '#475569';
+    // Círculo da bola
+    ctx.beginPath();
+    ctx.arc(60, 75, 45, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#ffffff';
+    ctx.stroke();
 
-      // Círculo da bola
-      ctx.beginPath();
-      ctx.arc(60, 75, 45, 0, Math.PI * 2);
-      ctx.fillStyle = color;
-      ctx.fill();
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#ffffff';
-      ctx.stroke();
+    // Letra
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText(letter, 60, 52);
 
-      // Letra
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 16px system-ui';
-      ctx.textAlign = 'center';
-      ctx.fillText(letter, 60, 52);
+    // Número
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(60, 80, 24, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px system-ui';
+    ctx.fillText(currentBall ? String(currentBall) : '?', 60, 88);
 
-      // Número
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(60, 80, 24, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 24px system-ui';
-      ctx.fillText(currentBall ? String(currentBall) : '?', 60, 88);
+    // Status de Auto-marcação
+    ctx.fillStyle = isAutoMark ? '#10b981' : '#94a3b8';
+    ctx.font = 'bold 11px system-ui';
+    ctx.fillText(isAutoMark ? '⚡ Auto-Marcar Ativo' : 'Manual', 60, 138);
 
-      // Status de Auto-marcação
-      ctx.fillStyle = isAutoMark ? '#10b981' : '#94a3b8';
-      ctx.font = 'bold 11px system-ui';
-      ctx.fillText(isAutoMark ? '⚡ Auto-Marcar Ativo' : 'Manual', 60, 138);
+    // 3. Desenhar Mini-Cartela 5x5 no lado direito
+    const startX = 135;
+    const startY = 20;
+    const cellSize = 22;
+    const gap = 3;
 
-      // 3. Desenhar Mini-Cartela 5x5 no lado direito
-      const startX = 135;
-      const startY = 20;
-      const cellSize = 22;
-      const gap = 3;
+    if (card && card.length === 5) {
+      for (let r = 0; r < 5; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = card[r][c];
+          const x = startX + c * (cellSize + gap);
+          const y = startY + r * (cellSize + gap);
+          const isMarked = cell.isFree || (markedCellIds && markedCellIds.has(cell.id));
 
-      if (card && card.length === 5) {
-        for (let r = 0; r < 5; r++) {
-          for (let c = 0; c < 5; c++) {
-            const cell = card[r][c];
-            const x = startX + c * (cellSize + gap);
-            const y = startY + r * (cellSize + gap);
-            const isMarked = cell.isFree || markedCellIds.has(cell.id);
+          // Célula
+          ctx.fillStyle = isMarked ? '#b45309' : '#1e293b';
+          ctx.strokeStyle = isMarked ? '#f59e0b' : '#334155';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.roundRect(x, y, cellSize, cellSize, 4);
+          ctx.fill();
+          ctx.stroke();
 
-            // Célula
-            ctx.fillStyle = isMarked ? '#b45309' : '#1e293b';
-            ctx.strokeStyle = isMarked ? '#f59e0b' : '#334155';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.roundRect(x, y, cellSize, cellSize, 4);
-            ctx.fill();
-            ctx.stroke();
-
-            // Número mini
-            ctx.fillStyle = isMarked ? '#ffffff' : '#94a3b8';
-            ctx.font = 'bold 9px system-ui';
-            ctx.textAlign = 'center';
-            if (cell.isFree) {
-              ctx.fillText('❤', x + cellSize / 2, y + 15);
-            } else {
-              ctx.fillText(String(cell.number), x + cellSize / 2, y + 15);
-            }
+          // Número mini
+          ctx.fillStyle = isMarked ? '#ffffff' : '#94a3b8';
+          ctx.font = 'bold 9px system-ui';
+          ctx.textAlign = 'center';
+          if (cell.isFree) {
+            ctx.fillText('❤', x + cellSize / 2, y + 15);
+          } else {
+            ctx.fillText(String(cell.number), x + cellSize / 2, y + 15);
           }
         }
       }
+    }
 
-      // 4. Rodapé do PiP: Quem está falando
-      const speaker = roomUsers.find(u => u.isSpeaking);
-      ctx.fillStyle = speaker ? '#22c55e' : '#64748b';
-      ctx.font = 'bold 11px system-ui';
-      ctx.textAlign = 'left';
-      ctx.fillText(speaker ? `🎙️ ${speaker.name} falando...` : '🔇 Ninguém falando no momento', 16, 162);
-
-      animationFrameId = requestAnimationFrame(render);
-    };
-
-    render();
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-    };
+    // 4. Rodapé do PiP: Quem está falando
+    const speaker = roomUsers.find(u => u.isSpeaking);
+    ctx.fillStyle = speaker ? '#22c55e' : '#64748b';
+    ctx.font = 'bold 11px system-ui';
+    ctx.textAlign = 'left';
+    ctx.fillText(speaker ? `🎙️ ${speaker.name} falando...` : '🔇 Silêncio na sala', 16, 162);
   }, [currentBall, card, markedCellIds, roomUsers, isAutoMark]);
 
-  // Ativar ou desativar Picture-in-Picture
+  // Renderiza continuamente APENAS se a janela flutuante estiver ativa
+  useEffect(() => {
+    if (!isPipActive) return;
+
+    let animId;
+    const loop = () => {
+      drawFrame();
+      animId = requestAnimationFrame(loop);
+    };
+
+    loop();
+
+    return () => {
+      if (animId) cancelAnimationFrame(animId);
+    };
+  }, [isPipActive, drawFrame]);
+
+  // Ativar ou desativar Picture-in-Picture nativo
   const togglePip = async () => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
@@ -123,8 +127,9 @@ export function FloatingPipWindow({
         await document.exitPictureInPicture();
         setIsPipActive(false);
       } else {
+        drawFrame();
         if (!video.srcObject) {
-          const stream = canvas.captureStream(20);
+          const stream = canvas.captureStream(15);
           video.srcObject = stream;
           await video.play();
         }
@@ -132,13 +137,12 @@ export function FloatingPipWindow({
         setIsPipActive(true);
       }
     } catch (err) {
-      console.warn('Picture-in-Picture falhou ou não é suportado pelo navegador:', err);
+      console.warn('Picture-in-Picture não suportado ou negado pelo navegador:', err);
     }
   };
 
   return (
     <div className="flex items-center">
-      {/* Canvas e Vídeo invisíveis necessários para gerar a janela flutuante nativa */}
       <canvas
         ref={canvasRef}
         width={270}
@@ -153,7 +157,6 @@ export function FloatingPipWindow({
         onLeavePictureInPicture={() => setIsPipActive(false)}
       />
 
-      {/* Botão de Janela Flutuante */}
       <button
         onClick={togglePip}
         type="button"

@@ -143,14 +143,8 @@ export default function App() {
     }
   });
 
-  // Execução contínua em segundo plano no celular para Netos (Web Worker + Audio keepalive)
-  useBackgroundKeepalive({
-    isAutoMark: profile.autoMark,
-    isAutoBingo: profile.autoBingo,
-    onBackgroundTick: () => {
-      // Keepalive tick garante que timers não congelem
-    }
-  });
+  // Execução contínua em segundo plano no celular para Netos (Web Worker)
+  useBackgroundKeepalive();
 
   // Sincroniza preferências do perfil com os estados do motor de bingo
   useEffect(() => {

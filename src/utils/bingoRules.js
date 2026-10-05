@@ -1,4 +1,4 @@
-// Regras do Bingo Tradicional de 75 Bolas
+// Regras do Bingo Tradicional de 75 Bolas com Novos Padrões de Vitória
 
 /**
  * Embaralha um array aleatoriamente
@@ -23,24 +23,14 @@ function getRandomSample(min, max, count) {
 
 /**
  * Cria uma nova cartela 5x5 tradicional
- * Retorna matriz 5x5 de células:
- * {
- *   id: string,
- *   number: number | null,
- *   letter: 'B'|'I'|'N'|'G'|'O',
- *   isFree: boolean,
- *   row: number,
- *   col: number
- * }
  */
 export function generateBingoCard() {
   const colB = getRandomSample(1, 15, 5).sort((a, b) => a - b);
   const colI = getRandomSample(16, 30, 5).sort((a, b) => a - b);
-  const colN = getRandomSample(31, 45, 4).sort((a, b) => a - b); // 4 números pois o centro é livre
+  const colN = getRandomSample(31, 45, 4).sort((a, b) => a - b); // centro é livre
   const colG = getRandomSample(46, 60, 5).sort((a, b) => a - b);
   const colO = getRandomSample(61, 75, 5).sort((a, b) => a - b);
 
-  // Insere espaço livre no meio da coluna N (índice 2)
   colN.splice(2, 0, null);
 
   const columns = [
@@ -85,26 +75,30 @@ export function generateDrawDeck() {
 
 /**
  * Verifica condições de vitória na cartela:
- * - Cartela Cheia (Bingo Total)
- * - Linhas completas
- * - Colunas completas
- * - Diagonais completas
+ * - Linhas horizontais (qualquer uma das 5)
+ * - Linhas verticais / colunas (qualquer uma das 5)
+ * - Diagonais (Principal \ ou Secundária /)
+ * - Quatro Pontas (os 4 cantos da cartela)
+ * - Cartela Cheia (opcional)
  */
 export function checkBingoWins(grid, markedCellIds) {
   const isMarked = (cell) => cell.isFree || markedCellIds.has(cell.id);
 
-  let fullCard = true;
   const completedRows = [];
   const completedCols = [];
   const completedDiagonals = [];
+  const winningCellIds = new Set();
 
-  // Checar Linhas
+  // 1. Checar Linhas Horizontais
   for (let r = 0; r < 5; r++) {
     const rowComplete = grid[r].every(cell => isMarked(cell));
-    if (rowComplete) completedRows.push(r);
+    if (rowComplete) {
+      completedRows.push(r);
+      grid[r].forEach(c => winningCellIds.add(c.id));
+    }
   }
 
-  // Checar Colunas
+  // 2. Checar Colunas Verticais
   for (let c = 0; c < 5; c++) {
     let colComplete = true;
     for (let r = 0; r < 5; r++) {
@@ -113,10 +107,13 @@ export function checkBingoWins(grid, markedCellIds) {
         break;
       }
     }
-    if (colComplete) completedCols.push(c);
+    if (colComplete) {
+      completedCols.push(c);
+      for (let r = 0; r < 5; r++) winningCellIds.add(grid[r][c].id);
+    }
   }
 
-  // Diagonal Principal (\)
+  // 3. Diagonal Principal (\)
   let diag1 = true;
   for (let i = 0; i < 5; i++) {
     if (!isMarked(grid[i][i])) {
@@ -124,9 +121,12 @@ export function checkBingoWins(grid, markedCellIds) {
       break;
     }
   }
-  if (diag1) completedDiagonals.push(0);
+  if (diag1) {
+    completedDiagonals.push(0);
+    for (let i = 0; i < 5; i++) winningCellIds.add(grid[i][i].id);
+  }
 
-  // Diagonal Secundária (/)
+  // 4. Diagonal Secundária (/)
   let diag2 = true;
   for (let i = 0; i < 5; i++) {
     if (!isMarked(grid[i][4 - i])) {
@@ -134,9 +134,20 @@ export function checkBingoWins(grid, markedCellIds) {
       break;
     }
   }
-  if (diag2) completedDiagonals.push(1);
+  if (diag2) {
+    completedDiagonals.push(1);
+    for (let i = 0; i < 5; i++) winningCellIds.add(grid[i][4 - i].id);
+  }
 
-  // Cartela cheia se todas as células estiverem marcadas
+  // 5. As Quatro Pontas (cantos [0,0], [0,4], [4,0], [4,4])
+  const corners = [grid[0][0], grid[0][4], grid[4][0], grid[4][4]];
+  const completedFourCorners = corners.every(c => isMarked(c));
+  if (completedFourCorners) {
+    corners.forEach(c => winningCellIds.add(c.id));
+  }
+
+  // Cartela Cheia
+  let fullCard = true;
   for (let r = 0; r < 5; r++) {
     for (let c = 0; c < 5; c++) {
       if (!isMarked(grid[r][c])) {
@@ -147,11 +158,28 @@ export function checkBingoWins(grid, markedCellIds) {
     if (!fullCard) break;
   }
 
+  // É Bingo se completou qualquer linha, coluna, diagonal ou quatro pontas!
+  const isBingo = completedRows.length > 0 ||
+                  completedCols.length > 0 ||
+                  completedDiagonals.length > 0 ||
+                  completedFourCorners ||
+                  fullCard;
+
+  let patternDescription = '';
+  if (fullCard) patternDescription = 'Cartela Cheia';
+  else if (completedFourCorners) patternDescription = 'Quatro Pontas';
+  else if (completedDiagonals.length > 0) patternDescription = 'Diagonal';
+  else if (completedCols.length > 0) patternDescription = 'Coluna';
+  else if (completedRows.length > 0) patternDescription = 'Linha Horizontal';
+
   return {
-    isBingo: fullCard,
+    isBingo,
+    patternDescription,
+    winningCellIds,
     completedRows,
     completedCols,
     completedDiagonals,
-    hasAnyWin: fullCard || completedRows.length > 0 || completedCols.length > 0 || completedDiagonals.length > 0
+    completedFourCorners,
+    fullCard
   };
 }

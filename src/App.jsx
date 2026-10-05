@@ -12,7 +12,10 @@ import { TopBallConveyor } from './components/TopBallConveyor';
 import { LeftCaregiverDock } from './components/LeftCaregiverDock';
 import { BingoCard } from './components/BingoCard';
 import { SideControls } from './components/SideControls';
+import { PodiumDisplay } from './components/PodiumDisplay';
+import { VirtualWinBanner } from './components/VirtualWinBanner';
 import { VictoryModal } from './components/VictoryModal';
+import { GameFinishedModal } from './components/GameFinishedModal';
 import { FamilyGuideModal } from './components/FamilyGuideModal';
 import { SettingsModal } from './components/SettingsModal';
 
@@ -58,7 +61,7 @@ export default function App() {
     cancelSpeech
   } = useVoiceAnnouncer();
 
-  // Jogo do Bingo
+  // Jogo do Bingo com Pódio e Jogadores Virtuais
   const {
     card,
     deck,
@@ -75,6 +78,11 @@ export default function App() {
     winState,
     isBingoReadyToClaim,
     claimBingo,
+    podiumWinners,
+    latestVirtualWinner,
+    setLatestVirtualWinner,
+    isGameOver,
+    vovoWinPlace,
     drawNextBall,
     toggleCell,
     resetGame
@@ -82,10 +90,17 @@ export default function App() {
     onBallDrawn: (num) => {
       speakNumber(num);
     },
-    onWin: () => {
+    onWin: (place, pattern) => {
       cancelSpeech();
       activeModalRef.current = 'victory';
       setShowBingoCelebration(true);
+    },
+    onVirtualWin: (winner) => {
+      soundFX.playBallDrawn();
+    },
+    onGameOver: () => {
+      cancelSpeech();
+      activeModalRef.current = 'gameover';
     }
   });
 
@@ -107,7 +122,7 @@ export default function App() {
   useEffect(() => {
     window.history.pushState(null, '', window.location.href);
 
-    const handlePopState = (e) => {
+    const handlePopState = () => {
       const modal = activeModalRef.current;
 
       if (modal === 'settings') {
@@ -125,7 +140,6 @@ export default function App() {
       }
 
       if (modal === 'exit') {
-        // Se já estava com o modal de saída aberto e apertou voltar no tablet, cancela a saída
         setShowExitConfirm(false);
         setIsPlaying(true);
         activeModalRef.current = null;
@@ -151,7 +165,7 @@ export default function App() {
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentScreen]);
+  }, [currentScreen, setIsPlaying]);
 
   // Prevenir recarregar a aba acidentalmente durante uma partida
   useEffect(() => {
@@ -211,7 +225,7 @@ export default function App() {
 
   // Solicitar saída (pausa o jogo automaticamente e abre o modal de confirmação)
   const handleRequestExit = () => {
-    setIsPlaying(false); // Pausa o jogo imediatamente
+    setIsPlaying(false);
     openModal('exit', setShowExitConfirm);
   };
 
@@ -226,7 +240,7 @@ export default function App() {
   // Cancelar saída e retornar ao jogo
   const handleCancelExit = () => {
     closeModal('exit', setShowExitConfirm);
-    setIsPlaying(true); // Retoma o jogo automaticamente
+    setIsPlaying(true);
   };
 
   return (
@@ -256,6 +270,12 @@ export default function App() {
       {/* 3. Tela da Partida (Estilo Play Store com Controles nas Laterais) */}
       {currentScreen === 'game' && (
         <div className="h-full w-full flex flex-col justify-between overflow-hidden relative">
+          {/* Banner de Notificação de Jogador Virtual Vencedor */}
+          <VirtualWinBanner
+            winner={latestVirtualWinner}
+            onDismiss={() => setLatestVirtualWinner(null)}
+          />
+
           {/* Overlay de Preparação e Contagem (3, 2, 1) */}
           {isPreparing && (
             <CountdownOverlay
@@ -276,15 +296,20 @@ export default function App() {
             progressPercent={timerProgress}
           />
 
+          {/* Sub-barra: Indicador de Vagas do Pódio (1º, 2º e 3º Lugar) */}
+          <div className="w-full flex items-center justify-center px-4 pt-1 pb-0.5">
+            <PodiumDisplay podiumWinners={podiumWinners} />
+          </div>
+
           {/* Área Central: Dock Esquerdo + Cartela Completa + Coluna Direita */}
-          <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-4 p-2 sm:p-3 min-h-0 overflow-hidden">
+          <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-4 p-1.5 sm:p-3 min-h-0 overflow-hidden">
             {/* 1. Lateral Esquerda: Botões pequenos discretos para cuidadores */}
             <LeftCaregiverDock
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
               onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
             />
 
-            {/* 2. Centro: Cartela 100% Visível sem Cortes */}
+            {/* 2. Centro: Cartela 100% Visível com Realce Dourado em Linhas/Diagonais/Pontas */}
             <div className="flex-1 h-full flex items-center justify-center min-h-0 w-full">
               <BingoCard
                 card={card}
@@ -327,7 +352,6 @@ export default function App() {
               O jogo foi pausado para você não perder nada.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
-              {/* Botão Não (voltar ao jogo) */}
               <button
                 onClick={handleCancelExit}
                 type="button"
@@ -335,8 +359,6 @@ export default function App() {
               >
                 Não (voltar ao jogo)
               </button>
-
-              {/* Botão Sim */}
               <button
                 onClick={handleConfirmExit}
                 type="button"
@@ -349,10 +371,24 @@ export default function App() {
         </div>
       )}
 
-      {/* Modais Globais */}
+      {/* Modal de Vitória da Vovó com a Foto no Pódio */}
       <VictoryModal
         isOpen={showBingoCelebration}
         onClose={() => closeModal('victory', setShowBingoCelebration)}
+        onNewGame={() => {
+          cancelSpeech();
+          resetGame();
+          setIsPreparing(true);
+        }}
+        vovoName={vovoName}
+        winPlace={vovoWinPlace || 1}
+        winPattern={winState.patternDescription || 'Linha'}
+      />
+
+      {/* Modal Carinhoso de Encerramento (Quando 3 virtuais ganham antes) */}
+      <GameFinishedModal
+        isOpen={isGameOver}
+        podiumWinners={podiumWinners}
         onNewGame={() => {
           cancelSpeech();
           resetGame();

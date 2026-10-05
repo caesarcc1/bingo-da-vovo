@@ -1,6 +1,6 @@
 import React from 'react';
 import { BINGO_COLORS } from '../utils/numberWords';
-import { Heart } from 'lucide-react';
+import { Heart, Sparkles } from 'lucide-react';
 
 export function BingoCard({
   card,
@@ -11,6 +11,7 @@ export function BingoCard({
   vovoName = 'Bingo da Vovó'
 }) {
   const letters = ['B', 'I', 'N', 'G', 'O'];
+  const winningCellIds = winState?.winningCellIds || new Set();
 
   return (
     <div className="flex flex-col h-full max-h-[min(540px,calc(100dvh-95px))] w-full max-w-md sm:max-w-lg md:max-w-xl mx-auto bg-white rounded-3xl shadow-2xl border-4 border-amber-500/80 overflow-hidden select-none">
@@ -19,6 +20,11 @@ export function BingoCard({
         <span className="text-xs sm:text-base font-black tracking-wider uppercase drop-shadow">
           {vovoName}
         </span>
+        {winState?.isBingo && (
+          <span className="bg-yellow-300 text-slate-950 text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full uppercase animate-bounce">
+            {winState.patternDescription}!
+          </span>
+        )}
       </div>
 
       {/* Letras B - I - N - G - O */}
@@ -42,13 +48,20 @@ export function BingoCard({
           row.map((cell) => {
             const isMarked = cell.isFree || markedCellIds.has(cell.id);
             const isCurrentMatch = !isMarked && cell.number === currentBall;
+            const isWinnerCell = winningCellIds.has(cell.id);
 
             // Casa Central (LIVRE)
             if (cell.isFree) {
               return (
                 <div
                   key={cell.id}
-                  className="w-full h-full flex flex-col items-center justify-center rounded-xl sm:rounded-2xl bg-amber-100 border-2 sm:border-3 border-amber-400 text-amber-800 shadow-sm p-0.5"
+                  className={`
+                    w-full h-full flex flex-col items-center justify-center rounded-xl sm:rounded-2xl p-0.5
+                    ${isWinnerCell
+                      ? 'bg-yellow-200 border-3 border-yellow-500 ring-4 ring-yellow-400/80 shadow-md animate-pulse'
+                      : 'bg-amber-100 border-2 sm:border-3 border-amber-400 text-amber-800 shadow-sm'
+                    }
+                  `}
                 >
                   <Heart className="w-5 h-5 sm:w-7 sm:h-7 text-rose-500 fill-rose-500 animate-pulse" />
                   <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-wider text-rose-700 leading-none mt-0.5">
@@ -66,7 +79,9 @@ export function BingoCard({
                 className={`
                   relative w-full h-full flex items-center justify-center rounded-xl sm:rounded-2xl transition-all duration-150 active:scale-95
                   border-2 sm:border-3 shadow-sm min-h-0
-                  ${isMarked
+                  ${isWinnerCell
+                    ? 'bg-yellow-100 border-yellow-500 ring-4 ring-yellow-400/80 shadow-md animate-pulse'
+                    : isMarked
                     ? 'bg-amber-50 border-amber-600/70 shadow-inner'
                     : isCurrentMatch
                     ? 'bg-amber-200 border-amber-500 ring-4 ring-amber-400 animate-pulse-gently'
@@ -89,7 +104,10 @@ export function BingoCard({
                 {isMarked && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-pop-in">
                     <div
-                      className="w-8 h-8 sm:w-11 sm:h-11 md:w-13 md:h-13 rounded-full flex items-center justify-center shadow-lg transform rotate-[-8deg] border-2 border-amber-900/40"
+                      className={`
+                        w-8 h-8 sm:w-11 sm:h-11 md:w-13 md:h-13 rounded-full flex items-center justify-center shadow-lg transform rotate-[-8deg] border-2 border-amber-900/40
+                        ${isWinnerCell ? 'ring-2 ring-yellow-300 scale-105' : ''}
+                      `}
                       style={{
                         background: 'radial-gradient(circle at 35% 30%, #b45309 0%, #78350f 70%, #451a03 100%)',
                         boxShadow: '0 4px 8px rgba(69, 26, 3, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.3)'
@@ -117,7 +135,7 @@ export function BingoCard({
 
       {/* Rodapé da Cartela */}
       <div className="bg-slate-100 py-1 px-3 border-t border-slate-200 text-center text-[10px] sm:text-xs text-slate-600 font-medium flex items-center justify-between flex-shrink-0">
-        <span>Toque na pedra para colocar o feijãozinho</span>
+        <span>Linha, Coluna, Diagonal ou 4 Pontas valem Bingo!</span>
         <span className="font-bold text-slate-800">
           {markedCellIds.size + 1} de 25
         </span>

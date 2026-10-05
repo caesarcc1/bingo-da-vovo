@@ -51,10 +51,10 @@ export function SideControls({
   };
 
   return (
-    <aside className="w-full md:w-36 lg:w-44 flex flex-col justify-center gap-2 select-none flex-shrink-0 z-10">
+    <aside className="w-full md:w-32 lg:w-38 flex flex-col justify-center gap-1.5 select-none flex-shrink-0 z-10">
       {/* Toast de Aviso da Trava */}
       {showToast && (
-        <div className="bg-amber-600 text-white px-2.5 py-1.5 rounded-2xl shadow-xl text-center text-xs font-black animate-bounce">
+        <div className="bg-amber-600 text-white px-2 py-1 rounded-xl shadow-xl text-center text-xs font-black animate-bounce">
           🔒 Segure por 3 segundos para reiniciar!
         </div>
       )}
@@ -76,7 +76,7 @@ export function SideControls({
         onTouchStart={handleHoldStart}
         onTouchEnd={handleHoldEnd}
         type="button"
-        className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-2xl font-bold text-xs sm:text-sm text-slate-800 bg-amber-100 hover:bg-amber-200 active:scale-95 shadow-md border-b-4 border-amber-300 select-none transition-all"
+        className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm text-slate-800 bg-amber-100 hover:bg-amber-200 active:scale-95 shadow-md border-b-2 sm:border-b-3 border-amber-300 select-none transition-all"
         title="Segure por 3 segundos para começar uma nova cartela"
       >
         {resetHoldProgress > 0 && (
@@ -85,7 +85,7 @@ export function SideControls({
             style={{ width: `${resetHoldProgress}%` }}
           />
         )}
-        <RotateCcw className="w-4 h-4 text-slate-700 relative z-10 flex-shrink-0" />
+        <RotateCcw className="w-3.5 h-3.5 text-slate-700 relative z-10 flex-shrink-0" />
         <span className="relative z-10 truncate">
           {resetHoldProgress > 0
             ? `${Math.round(resetHoldProgress)}%`
@@ -98,7 +98,7 @@ export function SideControls({
         onClick={onToggleMusic}
         type="button"
         className={`
-          w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-2xl border text-xs font-bold shadow active:scale-95 transition-all
+          w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl sm:rounded-2xl border text-xs font-bold shadow active:scale-95 transition-all
           ${hasOtherFamilyInRoom
             ? 'bg-slate-850 border-slate-700/60 text-slate-400'
             : (musicPlaying
@@ -117,10 +117,10 @@ export function SideControls({
       <button
         onClick={onRequestExit}
         type="button"
-        className="w-full flex items-center justify-center gap-1.5 py-2.5 sm:py-3 px-2 rounded-2xl font-black text-xs sm:text-sm text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-lg border-b-4 border-rose-800 select-none transition-all"
+        className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-lg border-b-2 sm:border-b-3 border-rose-800 select-none transition-all"
         title="Sair da partida"
       >
-        <LogOut className="w-4 h-4 flex-shrink-0" />
+        <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
         <span>Sair</span>
       </button>
 

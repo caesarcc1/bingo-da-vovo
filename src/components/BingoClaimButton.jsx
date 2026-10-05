@@ -42,9 +42,9 @@ export function BingoClaimButton({
         onClick={handleClick}
         type="button"
         className={`
-          w-full flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl font-black shadow-xl transition-all transform active:scale-95 border-b-4
+          w-full flex items-center justify-center gap-1.5 px-2 py-2 sm:py-2.5 rounded-xl sm:rounded-2xl font-black shadow-xl transition-all transform active:scale-95 border-b-2 sm:border-b-3
           ${isBingoReady
-            ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 border-amber-600 ring-4 ring-amber-300/50 animate-bounce text-base sm:text-lg'
+            ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 border-amber-600 ring-2 sm:ring-4 ring-amber-300/50 animate-bounce text-sm sm:text-base'
             : 'bg-slate-800/90 hover:bg-slate-700 text-amber-300 border-slate-950 text-xs sm:text-sm'
           }
         `}

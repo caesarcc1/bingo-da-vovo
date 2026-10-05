@@ -452,12 +452,12 @@ export default function App() {
           />
 
           {/* Sub-barra: Indicador de Vagas do Pódio (1º, 2º e 3º Lugar) */}
-          <div className="w-full flex items-center justify-center px-4 pt-1 pb-0.5">
+          <div className="w-full flex items-center justify-center px-2 py-0.5 flex-shrink-0">
             <PodiumDisplay podiumWinners={podiumWinners} />
           </div>
 
           {/* Área Central: Dock Esquerdo + Cartela Completa + Coluna Direita */}
-          <main className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-4 py-1 sm:py-2 min-h-0 overflow-hidden relative z-10">
+          <main className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1 min-h-0 overflow-hidden relative z-10">
             {/* 1. Lateral Esquerda: Lista de Familiares + Viva-Voz + Ajustes */}
             <LeftCaregiverDock
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
@@ -470,7 +470,7 @@ export default function App() {
             />
 
             {/* 2. Centro: Cartela 100% Visível com Realce Dourado em Linhas/Diagonais/Pontas */}
-            <div className="flex-1 h-full flex items-center justify-center min-h-0 w-full">
+            <div className="flex-1 h-full flex items-center justify-center min-h-0 w-full overflow-hidden">
               <BingoCard
                 card={card}
                 markedCellIds={markedCellIds}

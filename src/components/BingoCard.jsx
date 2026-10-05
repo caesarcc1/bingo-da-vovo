@@ -14,30 +14,27 @@ export function BingoCard({
   const winningCellIds = winState?.winningCellIds || new Set();
 
   return (
-    <div
-      className="flex flex-col h-full w-full max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-4 border-amber-400 overflow-hidden select-none ring-4 ring-amber-400/20"
-      style={{ maxHeight: 'min(620px, calc(100vh - 120px))' }}
-    >
+    <div className="flex flex-col h-full max-h-full w-full max-w-xl sm:max-w-2xl md:max-w-3xl lg:max-w-4xl mx-auto bg-white rounded-2xl sm:rounded-3xl shadow-[0_15px_40px_rgba(0,0,0,0.5)] border-3 sm:border-4 border-amber-400 overflow-hidden select-none ring-4 ring-amber-400/20">
       {/* Cabeçalho da Cartela com Nome Carinhoso */}
-      <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 py-1.5 sm:py-2 px-4 text-center text-white shadow-sm flex items-center justify-center gap-2 flex-shrink-0">
-        <span className="text-xs sm:text-base md:text-lg font-black tracking-wider uppercase drop-shadow">
+      <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 py-1 px-3 text-center text-white shadow-sm flex items-center justify-center gap-2 flex-shrink-0">
+        <span className="text-xs sm:text-sm md:text-base font-black tracking-wider uppercase drop-shadow">
           {vovoName}
         </span>
         {winState?.isBingo && (
-          <span className="bg-yellow-300 text-slate-950 text-[10px] sm:text-xs md:text-sm font-black px-2.5 py-0.5 rounded-full uppercase animate-bounce shadow">
+          <span className="bg-yellow-300 text-slate-950 text-[10px] sm:text-xs font-black px-2 py-0.5 rounded-full uppercase animate-bounce shadow">
             {winState.patternDescription}!
           </span>
         )}
       </div>
 
       {/* Letras B - I - N - G - O */}
-      <div className="grid grid-cols-5 border-b-2 sm:border-b-4 border-slate-200 bg-slate-100 flex-shrink-0">
+      <div className="grid grid-cols-5 border-b-2 sm:border-b-3 border-slate-200 bg-slate-100 flex-shrink-0">
         {letters.map((letter) => {
           const style = BINGO_COLORS[letter];
           return (
             <div
               key={letter}
-              className={`${style.bg} py-1.5 sm:py-2 md:py-2.5 text-center text-white font-black text-2xl sm:text-3xl md:text-4xl tracking-widest shadow-inner border-r last:border-r-0 border-white/20`}
+              className={`${style.bg} py-1 sm:py-1.5 text-center text-white font-black text-xl sm:text-2xl md:text-3xl tracking-widest shadow-inner border-r last:border-r-0 border-white/20`}
             >
               {letter}
             </div>
@@ -46,7 +43,7 @@ export function BingoCard({
       </div>
 
       {/* Grade 5x5 de Números Grandes: Garante que as 5 linhas cabem 100% na tela */}
-      <div className="flex-1 grid grid-cols-5 grid-rows-5 p-2 sm:p-3 md:p-3.5 gap-1.5 sm:gap-2.5 bg-slate-50 min-h-0">
+      <div className="flex-1 grid grid-cols-5 grid-rows-5 p-1 sm:p-1.5 md:p-2 gap-1 sm:gap-1.5 md:gap-2 bg-slate-50 min-h-0">
         {card.map((row) =>
           row.map((cell) => {
             const isMarked = cell.isFree || markedCellIds.has(cell.id);
@@ -59,15 +56,15 @@ export function BingoCard({
                 <div
                   key={cell.id}
                   className={`
-                    w-full h-full flex flex-col items-center justify-center rounded-xl sm:rounded-2xl p-0.5
+                    w-full h-full flex flex-col items-center justify-center rounded-xl sm:rounded-2xl p-0.5 min-h-0
                     ${isWinnerCell
-                      ? 'bg-yellow-200 border-3 border-yellow-500 ring-4 ring-yellow-400/80 shadow-md animate-pulse'
+                      ? 'bg-yellow-200 border-2 sm:border-3 border-yellow-500 ring-4 ring-yellow-400/80 shadow-md animate-pulse'
                       : 'bg-amber-100 border-2 sm:border-3 border-amber-400 text-amber-800 shadow-sm'
                     }
                   `}
                 >
-                  <Heart className="w-6 h-6 sm:w-8 sm:h-8 md:w-9 md:h-9 text-rose-500 fill-rose-500 animate-pulse" />
-                  <span className="text-[9px] sm:text-xs md:text-sm font-black uppercase tracking-wider text-rose-700 leading-none mt-0.5">
+                  <Heart className="w-5 h-5 sm:w-7 sm:h-7 md:w-8 md:h-8 text-rose-500 fill-rose-500 animate-pulse" />
+                  <span className="text-[8px] sm:text-[10px] md:text-xs font-black uppercase tracking-wider text-rose-700 leading-none mt-0.5">
                     Livre
                   </span>
                 </div>
@@ -96,7 +93,7 @@ export function BingoCard({
                 {/* Número da Célula */}
                 <span
                   className={`
-                    font-black tracking-tight select-none text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-none
+                    font-black tracking-tight select-none text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-none
                     ${isMarked ? 'text-slate-400' : 'text-slate-900'}
                   `}
                 >
@@ -108,7 +105,7 @@ export function BingoCard({
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none animate-pop-in">
                     <div
                       className={`
-                        w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 rounded-full flex items-center justify-center shadow-lg transform rotate-[-8deg] border-2 border-amber-900/40
+                        w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 lg:w-13 lg:h-13 rounded-full flex items-center justify-center shadow-lg transform rotate-[-8deg] border-2 border-amber-900/40
                         ${isWinnerCell ? 'ring-2 ring-yellow-300 scale-105' : ''}
                       `}
                       style={{
@@ -116,8 +113,8 @@ export function BingoCard({
                         boxShadow: '0 4px 8px rgba(69, 26, 3, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.3)'
                       }}
                     >
-                      <div className="w-2.5 h-1 bg-white/40 rounded-full absolute top-1.5 left-2 transform -rotate-12" />
-                      <span className="text-white font-black text-xs sm:text-sm md:text-base lg:text-lg drop-shadow leading-none">
+                      <div className="w-2 h-0.5 bg-white/40 rounded-full absolute top-1 left-1.5 transform -rotate-12" />
+                      <span className="text-white font-black text-[10px] sm:text-xs md:text-sm lg:text-base drop-shadow leading-none">
                         {cell.number}
                       </span>
                     </div>
@@ -126,7 +123,7 @@ export function BingoCard({
 
                 {/* Destaque se for a pedra da vez */}
                 {isCurrentMatch && (
-                  <div className="absolute -top-1.5 -right-1.5 bg-amber-500 text-white rounded-full px-1.5 py-0.5 text-[9px] sm:text-[10px] font-black shadow-md uppercase tracking-wider animate-bounce">
+                  <div className="absolute -top-1 -right-1 bg-amber-500 text-white rounded-full px-1.5 py-0.5 text-[8px] sm:text-[9px] font-black shadow-md uppercase tracking-wider animate-bounce">
                     Aqui!
                   </div>
                 )}
@@ -134,14 +131,6 @@ export function BingoCard({
             );
           })
         )}
-      </div>
-
-      {/* Rodapé da Cartela */}
-      <div className="bg-slate-100 py-1.5 px-4 border-t border-slate-200 text-center text-xs text-slate-600 font-medium flex items-center justify-between flex-shrink-0">
-        <span className="font-bold text-slate-700">Linhas, Colunas, Diagonais e 4 Pontas valem BINGO!</span>
-        <span className="font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full text-xs">
-          {markedCellIds.size + 1} de 25
-        </span>
       </div>
     </div>
   );

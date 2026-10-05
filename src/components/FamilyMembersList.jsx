@@ -97,47 +97,43 @@ export function FamilyMembersList({
     );
   }
 
-  // 3. Modo Vertical (Lateral esquerda do Tablet da Vovó)
+  // 3. Modo Vertical Ultra-Compacto (Barra lateral esguia para tablet)
   if (vertical) {
     return (
-      <div className="w-full flex flex-col gap-2 select-none">
-        <div className="flex items-center justify-between pb-1 border-b border-slate-700/60 px-1">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-300">
-            <Users className="w-4 h-4 text-amber-400" />
-            <span>Família na Mesa</span>
-          </div>
-          <span className="bg-slate-800 text-amber-300 px-2 py-0.5 rounded-full text-[10px] font-black border border-slate-700">
+      <div className="w-full flex flex-col items-center gap-2.5 select-none py-1">
+        {/* Título Compacto */}
+        <div className="flex flex-col items-center justify-center pb-1 border-b border-amber-500/20 w-full text-center">
+          <span className="text-[9px] font-black text-amber-300 uppercase tracking-wider">
+            Família
+          </span>
+          <span className="bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded-full text-[9px] font-bold mt-0.5">
             {displayUsers.length}
           </span>
         </div>
 
-        <div className="flex flex-col gap-2 max-h-[46vh] overflow-y-auto pr-0.5 scrollbar-thin">
+        {/* Lista de Avatares Empilhados Verticalmente */}
+        <div className="flex flex-col items-center gap-3 max-h-[50vh] overflow-y-auto w-full scrollbar-none py-1">
           {displayUsers.map((user) => {
             const isVovo = user.role === 'vovo';
             const isSpeaking = !!user.isSpeaking;
             const avatarSrc = getUserAvatar(user);
+            const firstName = user.name ? user.name.split(' ')[0] : (isVovo ? 'Vovó' : 'Neto');
 
             return (
               <div
                 key={user.id}
                 onClick={onOpenProfile}
-                className={`
-                  flex items-center gap-2.5 p-2 rounded-2xl cursor-pointer transition-all border text-left
-                  ${isSpeaking
-                    ? 'bg-emerald-950/90 border-emerald-400 shadow-[0_0_18px_rgba(52,211,153,0.6)] ring-3 ring-emerald-400/80 scale-[1.02]'
-                    : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/80'
-                  }
-                `}
-                title={`${user.name} - Clique para ver perfil`}
+                className="flex flex-col items-center cursor-pointer transition-all active:scale-95 group relative"
+                title={`${user.name} (${isVovo ? 'Vovó' : 'Neto'}) ${isSpeaking ? '- Falando no microfone' : ''}`}
               >
-                {/* Foto Grande do Familiar */}
-                <div className="relative flex-shrink-0">
+                {/* Foto Redonda do Familiar com Indicador de Voz */}
+                <div className="relative">
                   <div
                     className={`
-                      w-11 h-11 rounded-full overflow-hidden border-2.5 bg-slate-900 shadow-md
+                      w-11 h-11 sm:w-12 sm:h-12 rounded-full overflow-hidden border-2.5 bg-slate-900 shadow-md transition-all
                       ${isSpeaking
-                        ? 'border-emerald-300 ring-2 ring-emerald-400'
-                        : isVovo ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-emerald-500'
+                        ? 'border-emerald-400 ring-4 ring-emerald-400/80 shadow-[0_0_15px_rgba(52,211,153,0.8)] scale-110'
+                        : isVovo ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-slate-500/70 group-hover:border-amber-400'
                       }
                     `}
                   >
@@ -149,37 +145,16 @@ export function FamilyMembersList({
                     />
                   </div>
                   {isSpeaking && (
-                    <span className="absolute -bottom-1 -right-1 p-1 bg-emerald-500 rounded-full text-slate-950 shadow">
-                      <Mic className="w-2.5 h-2.5" />
+                    <span className="absolute -bottom-1 -right-1 p-0.5 bg-emerald-500 rounded-full text-slate-950 shadow-md animate-bounce">
+                      <Mic className="w-3 h-3 text-slate-950" />
                     </span>
                   )}
                 </div>
 
-                {/* Nome e Indicador de Voz */}
-                <div className="flex flex-col min-w-0 flex-1">
-                  <div className="flex items-center justify-between gap-1">
-                    <span className="font-black text-sm text-white truncate leading-tight">
-                      {user.name}
-                    </span>
-                    {isSpeaking && (
-                      <span className="flex h-2 w-2 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-[11px] mt-0.5">
-                    {isSpeaking ? (
-                      <span className="text-emerald-300 font-extrabold flex items-center gap-1">
-                        🎙️ Falando agora!
-                      </span>
-                    ) : (
-                      <span className="text-slate-400 font-medium">
-                        {isVovo ? '👵 Vovó' : '📱 Neto(a)'}
-                      </span>
-                    )}
-                  </div>
-                </div>
+                {/* Primeiro Nome em Miniatura */}
+                <span className={`text-[10px] font-black truncate max-w-[62px] text-center mt-1 leading-none ${isSpeaking ? 'text-emerald-300' : 'text-slate-200'}`}>
+                  {firstName}
+                </span>
               </div>
             );
           })}

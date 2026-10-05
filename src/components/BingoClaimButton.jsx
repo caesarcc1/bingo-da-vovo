@@ -29,11 +29,11 @@ export function BingoClaimButton({
   };
 
   return (
-    <div className="relative flex flex-col items-center">
+    <div className="relative flex flex-col items-center w-full">
       {/* Toast Carinhoso se apertar antes da hora */}
       {showEncourageToast && (
-        <div className="absolute -top-12 bg-amber-600 text-white font-black text-xs sm:text-sm px-4 py-1.5 rounded-full shadow-lg animate-bounce whitespace-nowrap">
-          Ainda faltam pedrinhas, vovó! Vamos continuar torcendo! 🍀
+        <div className="absolute -top-12 bg-amber-600 text-white font-black text-xs px-3 py-1 rounded-full shadow-lg animate-bounce whitespace-nowrap z-20">
+          Ainda faltam pedrinhas, vovó! 🍀
         </div>
       )}
 
@@ -42,32 +42,30 @@ export function BingoClaimButton({
         onClick={handleClick}
         type="button"
         className={`
-          flex items-center justify-center gap-3 px-8 py-3.5 sm:px-12 sm:py-4 rounded-3xl font-black text-xl sm:text-2xl md:text-3xl shadow-2xl transition-all transform active:scale-95 border-b-6
+          w-full flex items-center justify-center gap-1.5 px-3 py-3 rounded-2xl font-black shadow-xl transition-all transform active:scale-95 border-b-4
           ${isBingoReady
-            ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 border-amber-600 ring-8 ring-amber-300/50 animate-bounce'
-            : 'bg-slate-800 text-slate-400 border-slate-900 opacity-90 hover:opacity-100'
+            ? 'bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-slate-950 border-amber-600 ring-4 ring-amber-300/50 animate-bounce text-base sm:text-lg'
+            : 'bg-slate-800/90 hover:bg-slate-700 text-amber-300 border-slate-950 text-xs sm:text-sm'
           }
         `}
         style={
           isBingoReady
             ? {
-                boxShadow: '0 0 35px rgba(245, 158, 11, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.7)'
+                boxShadow: '0 0 30px rgba(245, 158, 11, 0.8), inset 0 2px 4px rgba(255, 255, 255, 0.7)'
               }
             : {}
         }
       >
         {isBingoReady ? (
           <>
-            <Sparkles className="w-8 h-8 text-amber-900 animate-spin" />
-            <span className="tracking-wider uppercase">APERTE BINGO!</span>
-            <Trophy className="w-8 h-8 text-amber-900 animate-bounce" />
+            <Sparkles className="w-5 h-5 text-amber-900 animate-spin flex-shrink-0" />
+            <span className="tracking-wider uppercase font-black">BINGO!</span>
+            <Trophy className="w-5 h-5 text-amber-900 animate-bounce flex-shrink-0" />
           </>
         ) : (
-          <>
-            <span className="text-base sm:text-lg tracking-wide uppercase text-slate-300">
-              BINGO ({markedCount}/25)
-            </span>
-          </>
+          <span className="tracking-wide uppercase font-bold text-xs sm:text-sm text-slate-200">
+            Bingo ({markedCount}/25)
+          </span>
         )}
       </button>
     </div>

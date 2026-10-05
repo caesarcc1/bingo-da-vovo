@@ -24,7 +24,7 @@ export function TopBallConveyor({
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
   return (
-    <header className="w-full bg-slate-900/90 backdrop-blur-md border-b-2 border-slate-700/60 py-2.5 px-3 sm:px-6 flex items-center justify-between gap-3 shadow-lg select-none z-20">
+    <header className="w-full bg-slate-950/80 backdrop-blur-md border-b-2 border-amber-500/20 py-2.5 px-3 sm:px-6 flex items-center justify-between gap-3 shadow-lg select-none z-20">
       {/* Lado Esquerdo: Botão Voltar (50% Maior) + Pausa + Contador */}
       <div className="flex items-center gap-2.5 sm:gap-4 flex-shrink-0">
         {/* Botão VOLTAR (50% Maior e mais fácil de tocar) */}

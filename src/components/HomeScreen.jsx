@@ -20,11 +20,11 @@ export function HomeScreen({
     <div
       className="h-[100dvh] w-screen flex flex-col items-center justify-between p-3 sm:p-6 select-none text-center relative overflow-hidden"
       style={{
-        background: 'radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%)'
+        background: 'radial-gradient(circle at 50% 20%, #1e40af 0%, #1e3a8a 35%, #0f172a 75%, #020617 100%)'
       }}
     >
       {/* Luz ambiente de fundo */}
-      <div className="absolute top-1/4 w-96 h-96 bg-amber-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/4 w-[500px] h-[500px] bg-amber-500/20 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Topo: Logo & Título & Botão de Perfil */}
       <header className="relative z-10 pt-1 sm:pt-3 flex flex-col items-center w-full max-w-xl">

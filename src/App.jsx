@@ -335,11 +335,13 @@ export default function App() {
     <div
       onClick={handleFirstInteraction}
       onTouchStart={handleFirstInteraction}
-      className="h-[100dvh] w-screen bg-slate-900 text-slate-800 flex flex-col justify-between overflow-hidden select-none"
+      className="h-[100dvh] w-screen bg-slate-950 text-slate-800 flex flex-col justify-between overflow-hidden select-none relative"
       style={{
-        background: 'radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%)'
+        background: 'radial-gradient(circle at 50% 15%, #1e40af 0%, #1e3a8a 35%, #0f172a 75%, #020617 100%)'
       }}
     >
+      {/* Luz dourada de auditório no topo */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] sm:w-[900px] h-[250px] bg-amber-400/10 blur-[90px] pointer-events-none rounded-full" />
       {/* 1. Tela de Abertura (Splash Screen) */}
       {currentScreen === 'splash' && (
         <SplashScreen onFinish={() => setCurrentScreen('home')} />
@@ -429,7 +431,7 @@ export default function App() {
           </div>
 
           {/* Área Central: Dock Esquerdo + Cartela Completa + Coluna Direita */}
-          <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-4 p-1.5 sm:p-3 min-h-0 overflow-hidden">
+          <main className="flex-1 w-full max-w-[1400px] mx-auto flex flex-col md:flex-row items-center justify-between gap-1.5 sm:gap-3 px-2 sm:px-4 py-1 sm:py-2 min-h-0 overflow-hidden relative z-10">
             {/* 1. Lateral Esquerda: Lista de Familiares + Viva-Voz + Ajustes */}
             <LeftCaregiverDock
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}

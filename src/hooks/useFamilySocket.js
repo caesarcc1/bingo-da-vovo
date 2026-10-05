@@ -8,10 +8,21 @@ export function useFamilySocket({
   onRemoteBallDrawn,
   onRemoteBingoClaimed,
   onGameStateSync,
+  onGameStarted,
+  onGameReset,
   onUserSpeaking
 }) {
   const [isConnected, setIsConnected] = useState(false);
   const [roomUsers, setRoomUsers] = useState([]);
+  const [roomGameState, setRoomGameState] = useState({
+    status: 'waiting', // 'waiting' | 'in_game' | 'finished'
+    gameId: null,
+    drawnBalls: [],
+    currentBall: null,
+    podiumWinners: [],
+    startedAt: null
+  });
+
   const socketRef = useRef(null);
 
   const profileRef = useRef(profile);
@@ -22,15 +33,19 @@ export function useFamilySocket({
   onRemoteBingoClaimedRef.current = onRemoteBingoClaimed;
   const onGameStateSyncRef = useRef(onGameStateSync);
   onGameStateSyncRef.current = onGameStateSync;
+  const onGameStartedRef = useRef(onGameStarted);
+  onGameStartedRef.current = onGameStarted;
+  const onGameResetRef = useRef(onGameReset);
+  onGameResetRef.current = onGameReset;
   const onUserSpeakingRef = useRef(onUserSpeaking);
   onUserSpeakingRef.current = onUserSpeaking;
 
   useEffect(() => {
     // Inicia conexão resiliente com o servidor Hetzner
     const socket = io(HETZNER_SERVER_URL, {
-      reconnectionAttempts: 5,
-      reconnectionDelay: 2000,
-      timeout: 4000,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1500,
+      timeout: 5000,
       transports: ['websocket', 'polling']
     });
 
@@ -53,16 +68,31 @@ export function useFamilySocket({
       setRoomUsers(users);
     });
 
+    socket.on('game-state-sync', (gameState) => {
+      if (gameState) setRoomGameState(gameState);
+      if (onGameStateSyncRef.current) onGameStateSyncRef.current(gameState);
+    });
+
+    socket.on('game-started', (gameState) => {
+      if (gameState) setRoomGameState(gameState);
+      if (onGameStartedRef.current) onGameStartedRef.current(gameState);
+    });
+
+    socket.on('game-reset', (gameState) => {
+      if (gameState) setRoomGameState(gameState);
+      if (onGameResetRef.current) onGameResetRef.current(gameState);
+    });
+
     socket.on('ball-drawn', ({ ball, gameState }) => {
+      if (gameState) setRoomGameState(gameState);
       if (onRemoteBallDrawnRef.current) onRemoteBallDrawnRef.current(ball, gameState);
     });
 
     socket.on('bingo-claimed', ({ winner, podiumWinners }) => {
+      if (podiumWinners) {
+        setRoomGameState(prev => ({ ...prev, podiumWinners }));
+      }
       if (onRemoteBingoClaimedRef.current) onRemoteBingoClaimedRef.current(winner, podiumWinners);
-    });
-
-    socket.on('game-state-sync', (gameState) => {
-      if (onGameStateSyncRef.current) onGameStateSyncRef.current(gameState);
     });
 
     socket.on('user-speaking', ({ userId, isSpeaking }) => {
@@ -76,6 +106,20 @@ export function useFamilySocket({
       socket.disconnect();
     };
   }, []); // Conecta uma única vez ao montar
+
+  // Iniciar partida (Host / Vovó)
+  const emitStartGame = useCallback(() => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('start-game', { roomId: 'familia' });
+    }
+  }, []);
+
+  // Reiniciar partida (Host / Vovó)
+  const emitResetGame = useCallback(() => {
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('reset-game', { roomId: 'familia' });
+    }
+  }, []);
 
   // Transmitir pedra sorteada
   const emitBallDrawn = useCallback((ball) => {
@@ -101,7 +145,10 @@ export function useFamilySocket({
   return {
     isConnected,
     roomUsers,
+    roomGameState,
     socket: socketRef.current,
+    emitStartGame,
+    emitResetGame,
     emitBallDrawn,
     emitClaimBingo,
     emitSpeakingState

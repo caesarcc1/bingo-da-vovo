@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useBingoGame } from './hooks/useBingoGame';
 import { useVoiceAnnouncer } from './hooks/useVoiceAnnouncer';
 import { useWakeLock } from './hooks/useWakeLock';
-import { useUserProfile } from './hooks/useUserProfile';
+import { useUserProfile, getUserAvatar } from './hooks/useUserProfile';
 import { useFamilySocket } from './hooks/useFamilySocket';
 import { useWebRTCVoice } from './hooks/useWebRTCVoice';
 import { useBackgroundKeepalive } from './hooks/useBackgroundKeepalive';
@@ -83,6 +83,8 @@ export default function App() {
     timerProgress,
     winState,
     isBingoReadyToClaim,
+    hasWonThisGame,
+    setHasWonThisGame,
     claimBingo,
     podiumWinners,
     latestVirtualWinner,
@@ -95,6 +97,7 @@ export default function App() {
     resetGame
   } = useBingoGame({
     playerName: profile.name,
+    isHost: isVovo,
     onBallDrawn: (num) => {
       speakNumber(num);
       emitBallDrawn(num);
@@ -103,7 +106,11 @@ export default function App() {
       cancelSpeech();
       activeModalRef.current = 'victory';
       setShowBingoCelebration(true);
-      emitClaimBingo(winnerObj);
+      emitClaimBingo({
+        ...winnerObj,
+        role: profile.role,
+        photo: getUserAvatar(profile)
+      });
     },
     onVirtualWin: (winner) => {
       soundFX.playBallDrawn();
@@ -118,7 +125,10 @@ export default function App() {
   const {
     isConnected,
     roomUsers,
+    roomGameState,
     socket,
+    emitStartGame,
+    emitResetGame,
     emitBallDrawn,
     emitClaimBingo,
     emitSpeakingState
@@ -130,6 +140,16 @@ export default function App() {
     },
     onRemoteBingoClaimed: (winner, podium) => {
       setLatestVirtualWinner(winner);
+      soundFX.playBallDrawn();
+    },
+    onGameStarted: (gameState) => {
+      if (!isVovo) {
+        resetGame();
+        setCurrentScreen('game');
+      }
+    },
+    onGameReset: (gameState) => {
+      resetGame();
     }
   });
 
@@ -341,6 +361,8 @@ export default function App() {
           isBingoReady={isBingoReadyToClaim}
           onClaimBingo={claimBingo}
           onRequestExit={handleRequestExit}
+          hasWonThisGame={hasWonThisGame}
+          roomGameState={roomGameState}
           autoMark={autoMark}
           onToggleAutoMark={() => {
             const next = !autoMark;
@@ -379,7 +401,7 @@ export default function App() {
             />
           )}
 
-          {/* Topo: Esteira de Bolas com Botão VOLTAR 50% Maior + Espaço de Voz da Família */}
+          {/* Topo: Esteira de Bolas com Botão VOLTAR 50% Maior */}
           <TopBallConveyor
             currentBall={currentBall}
             drawnBalls={drawnBalls}
@@ -389,36 +411,6 @@ export default function App() {
             onTogglePlay={() => setIsPlaying(!isPlaying)}
             onBackToHome={handleRequestExit}
             progressPercent={timerProgress}
-            familySlot={
-              <div className="flex items-center gap-2">
-                <FamilyMembersList
-                  roomUsers={roomUsers}
-                  isConnected={isConnected}
-                  currentProfile={profile}
-                  onOpenProfile={() => openModal('profile', setIsProfileOpen)}
-                  compact={true}
-                />
-                <VoiceChatBar
-                  isVovo={true}
-                  isMuted={voiceProps.isMuted}
-                  onToggleMute={() => voiceProps.setIsMuted(!voiceProps.isMuted)}
-                  isPushToTalk={false}
-                  onTogglePushToTalk={() => {}}
-                  isTalking={voiceProps.isTalking}
-                  hasMicPermission={voiceProps.hasMicPermission}
-                  onInitMic={voiceProps.initMicrophone}
-                  onPushToTalkStart={() => {}}
-                  onPushToTalkEnd={() => {}}
-                />
-                <FloatingPipWindow
-                  currentBall={currentBall}
-                  card={card}
-                  markedCellIds={markedCellIds}
-                  roomUsers={roomUsers}
-                  isAutoMark={autoMark}
-                />
-              </div>
-            }
           />
 
           {/* Sub-barra: Indicador de Vagas do Pódio (1º, 2º e 3º Lugar) */}
@@ -428,11 +420,15 @@ export default function App() {
 
           {/* Área Central: Dock Esquerdo + Cartela Completa + Coluna Direita */}
           <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-2 sm:gap-4 p-1.5 sm:p-3 min-h-0 overflow-hidden">
-            {/* 1. Lateral Esquerda: Botões pequenos discretos para cuidadores */}
+            {/* 1. Lateral Esquerda: Lista de Familiares + Viva-Voz + Ajustes */}
             <LeftCaregiverDock
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
               onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
               onOpenProfile={() => openModal('profile', setIsProfileOpen)}
+              roomUsers={roomUsers}
+              isConnected={isConnected}
+              currentProfile={profile}
+              voiceProps={voiceProps}
             />
 
             {/* 2. Centro: Cartela 100% Visível com Realce Dourado em Linhas/Diagonais/Pontas */}
@@ -455,6 +451,7 @@ export default function App() {
               onResetGame={() => {
                 cancelSpeech();
                 resetGame();
+                emitStartGame();
                 setIsPreparing(true);
               }}
               onRequestExit={handleRequestExit}
@@ -504,10 +501,11 @@ export default function App() {
         onNewGame={() => {
           cancelSpeech();
           resetGame();
+          if (isVovo) emitStartGame();
           setIsPreparing(true);
         }}
         vovoName={profile.name}
-        playerPhoto={profile.photo}
+        playerPhoto={getUserAvatar(profile)}
         winPlace={vovoWinPlace || 1}
         winPattern={winState.patternDescription || 'Linha'}
       />
@@ -519,6 +517,7 @@ export default function App() {
         onNewGame={() => {
           cancelSpeech();
           resetGame();
+          if (isVovo) emitStartGame();
           setIsPreparing(true);
         }}
         vovoName={profile.name}

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { X, Camera, User, Sparkles, Zap, Trophy, Mic, Smartphone, Tablet } from 'lucide-react';
+import { X, Camera, Sparkles, Zap, Trophy, Smartphone, Tablet } from 'lucide-react';
+import { DEFAULT_AVATAR, VOVO_AVATAR, getUserAvatar } from '../hooks/useUserProfile';
 
 export function ProfileModal({
   isOpen,
@@ -12,7 +13,13 @@ export function ProfileModal({
   const [role, setRole] = useState(profile?.role || 'vovo');
   const [autoMark, setAutoMark] = useState(profile?.autoMark || false);
   const [autoBingo, setAutoBingo] = useState(profile?.autoBingo || false);
-  const [photoPreview, setPhotoPreview] = useState(profile?.photo || '/vovo.jpg');
+  const [photoPreview, setPhotoPreview] = useState(() => {
+    if (profile?.role === 'neto' && profile?.photo === VOVO_AVATAR) {
+      return null;
+    }
+    return profile?.photo || (profile?.role === 'vovo' ? VOVO_AVATAR : null);
+  });
+
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
@@ -35,13 +42,27 @@ export function ProfileModal({
     }
   };
 
+  const getEffectiveAvatar = () => {
+    if (photoPreview && photoPreview !== VOVO_AVATAR && photoPreview !== DEFAULT_AVATAR) {
+      return photoPreview;
+    }
+    if (role === 'vovo') {
+      return VOVO_AVATAR;
+    }
+    return DEFAULT_AVATAR;
+  };
+
   const handleSave = () => {
+    const finalPhoto = role === 'vovo'
+      ? (photoPreview || VOVO_AVATAR)
+      : (photoPreview === VOVO_AVATAR ? null : photoPreview);
+
     onUpdateProfile({
       name: name.trim() || (role === 'vovo' ? 'Vovó' : 'Neto'),
       role,
       autoMark,
       autoBingo,
-      photo: photoPreview
+      photo: finalPhoto
     });
     onClose();
   };
@@ -80,7 +101,7 @@ export function ProfileModal({
                 onClick={() => {
                   setRole('vovo');
                   if (name === 'Neto' || !name) setName('Vovó');
-                  setPhotoPreview('/vovo.jpg');
+                  if (!photoPreview) setPhotoPreview(VOVO_AVATAR);
                 }}
                 className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 transition-all text-center ${
                   role === 'vovo'
@@ -102,6 +123,7 @@ export function ProfileModal({
                 onClick={() => {
                   setRole('neto');
                   if (name === 'Vovó') setName('Neto');
+                  if (photoPreview === VOVO_AVATAR) setPhotoPreview(null);
                 }}
                 className={`flex flex-col items-center gap-2 p-3.5 rounded-2xl border-2 transition-all text-center ${
                   role === 'neto'
@@ -123,21 +145,17 @@ export function ProfileModal({
           {/* Foto e Nome */}
           <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60">
             {/* Foto Circular com Botão de Alterar */}
-            <div className="relative group">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-amber-400 shadow-lg bg-slate-700 flex items-center justify-center">
-                {photoPreview ? (
-                  <img
-                    src={photoPreview}
-                    alt={name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User className="w-10 h-10 text-slate-400" />
-                )}
+            <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+              <div className="w-22 h-22 rounded-full overflow-hidden border-3 border-amber-400 shadow-lg bg-slate-800 flex items-center justify-center">
+                <img
+                  src={getEffectiveAvatar()}
+                  alt={name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => { e.currentTarget.src = DEFAULT_AVATAR; }}
+                />
               </div>
               <button
                 type="button"
-                onClick={() => fileInputRef.current?.click()}
                 className="absolute -bottom-1 -right-1 p-2 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md active:scale-90 transition-transform"
                 title="Tirar foto ou escolher da galeria"
               >
@@ -166,7 +184,9 @@ export function ProfileModal({
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-slate-600 focus:border-amber-400 text-white font-bold text-base outline-none shadow-inner"
               />
               <span className="text-[11px] text-slate-400 mt-1 block">
-                Este nome aparecerá na tela da vovó e para os parentes.
+                {role === 'neto' && !photoPreview
+                  ? '💡 Toque na foto para tirar uma foto sua ou escolher da galeria.'
+                  : 'Este nome e foto aparecerão na tela da vovó e dos parentes.'}
               </span>
             </div>
           </div>
@@ -187,7 +207,7 @@ export function ProfileModal({
                     <span>⚡ Auto-Marcar Pedras</span>
                   </div>
                   <div className="text-[11px] text-slate-400 mt-0.5">
-                    Marca os números na sua cartela automaticamente assim que saem.
+                    Marca os números na sua cartela automaticamente assim que a Vovó sortear.
                   </div>
                 </div>
                 <input

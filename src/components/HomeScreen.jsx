@@ -2,6 +2,7 @@ import React from 'react';
 import { Play, Settings, ShieldCheck, Heart, Sparkles, User, Users, Smartphone, Tablet } from 'lucide-react';
 import { VirtualPlayerAvatar } from './VirtualPlayerAvatar';
 import { FamilyMembersList } from './FamilyMembersList';
+import { getUserAvatar } from '../hooks/useUserProfile';
 
 export function HomeScreen({
   vovoName,
@@ -37,10 +38,10 @@ export function HomeScreen({
           >
             <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-amber-400 bg-slate-700">
               <img
-                src={profile?.photo || '/vovo.jpg'}
+                src={getUserAvatar(profile)}
                 alt={profile?.name}
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.src = '/vovo.jpg'; }}
+                onError={(e) => { e.currentTarget.src = getUserAvatar(profile); }}
               />
             </div>
             <div className="text-left">
@@ -90,10 +91,10 @@ export function HomeScreen({
           <div className="relative group cursor-pointer" onClick={onOpenProfile}>
             <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl ring-6 ring-amber-300/40 bg-slate-800">
               <img
-                src={profile?.photo || '/vovo.jpg'}
+                src={getUserAvatar(profile)}
                 alt={profile?.name}
                 className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.src = '/vovo.jpg'; }}
+                onError={(e) => { e.currentTarget.src = getUserAvatar(profile); }}
               />
             </div>
             {/* Estrelas Brilhantes */}

@@ -10,8 +10,7 @@ export function TopBallConveyor({
   isPlaying,
   onTogglePlay,
   onBackToHome,
-  progressPercent = 0,
-  familySlot = null
+  progressPercent = 0
 }) {
   const currentLetter = currentBall ? getBingoLetter(currentBall) : null;
   const currentStyle = currentLetter ? BINGO_COLORS[currentLetter] : null;
@@ -68,13 +67,6 @@ export function TopBallConveyor({
           {drawnBalls.length}/75 Bolas
         </span>
       </div>
-
-      {/* Centro: Espaço de Familiares Conectados e Voz */}
-      {familySlot && (
-        <div className="hidden lg:flex items-center justify-center flex-1 max-w-md mx-2 overflow-hidden">
-          {familySlot}
-        </div>
-      )}
 
       {/* Direita: Esteira de Bolas Estilo Play Store */}
       <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">

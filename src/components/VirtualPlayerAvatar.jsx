@@ -1,18 +1,23 @@
 import React from 'react';
+import { DEFAULT_AVATAR, VOVO_AVATAR } from '../hooks/useUserProfile';
 
 export function VirtualPlayerAvatar({ playerId, size = 64, className = '', isVovo = false, customPhoto = null }) {
   if (customPhoto || isVovo || playerId === 'vovo') {
+    const isActuallyVovo = isVovo || playerId === 'vovo';
+    const fallback = isActuallyVovo ? VOVO_AVATAR : DEFAULT_AVATAR;
+    const photoSrc = customPhoto || fallback;
+
     return (
       <div
         className={`relative rounded-full overflow-hidden border-4 border-amber-400 shadow-lg flex-shrink-0 bg-amber-100 ${className}`}
         style={{ width: size, height: size }}
       >
         <img
-          src={customPhoto || '/vovo.jpg'}
+          src={photoSrc}
           alt="Foto do Jogador"
           className="w-full h-full object-cover object-top"
           onError={(e) => {
-            e.currentTarget.src = '/vovo.jpg';
+            e.currentTarget.src = fallback;
           }}
         />
         {/* Borda dourada brilhante */}

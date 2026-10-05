@@ -8,7 +8,8 @@ export function useBingoGame({
   onWin,
   onVirtualWin,
   onGameOver,
-  playerName = 'Vovó'
+  playerName = 'Vovó',
+  isHost = true
 }) {
   const [card, setCard] = useState(() => generateBingoCard());
   const [deck, setDeck] = useState(() => generateDrawDeck());
@@ -20,6 +21,7 @@ export function useBingoGame({
   const [autoBingo, setAutoBingo] = useState(false); // auto-bingo instantâneo
   const [timerProgress, setTimerProgress] = useState(0); // 0 a 100% para o anel da bola
   const [isBingoReadyToClaim, setIsBingoReadyToClaim] = useState(false);
+  const [hasWonThisGame, setHasWonThisGame] = useState(false); // trava de vitória até o reset
 
   // Jogadores Virtuais & Pódio (3 Ganhadores)
   const [virtualPlayers, setVirtualPlayers] = useState(() => initializeVirtualPlayers());
@@ -147,10 +149,10 @@ export function useBingoGame({
   }, [autoMark]);
 
   /**
-   * Timer contínuo para o anel de progresso da bola e sorteio automático
+   * Timer contínuo para o anel de progresso da bola e sorteio automático (apenas Host / Vovó)
    */
   useEffect(() => {
-    if (!isPlaying || deck.length === 0 || isGameOver) {
+    if (!isHost || !isPlaying || deck.length === 0 || isGameOver) {
       setTimerProgress(0);
       return;
     }
@@ -170,13 +172,13 @@ export function useBingoGame({
     }, intervalStepMs);
 
     return () => clearInterval(timer);
-  }, [isPlaying, autoSpeed, deck.length, drawNextBall, isGameOver]);
+  }, [isHost, isPlaying, autoSpeed, deck.length, drawNextBall, isGameOver]);
 
   /**
    * Alternar marcação de uma célula na cartela
    */
   const toggleCell = useCallback((cell) => {
-    if (cell.isFree) return;
+    if (hasWonThisGame || cell.isFree) return;
     const isDrawn = drawnBalls.includes(cell.number);
 
     setMarkedCellIds(prev => {
@@ -191,7 +193,7 @@ export function useBingoGame({
       }
       return next;
     });
-  }, [drawnBalls]);
+  }, [hasWonThisGame, drawnBalls]);
 
   /**
    * Reivindicar e celebrar o BINGO
@@ -199,6 +201,7 @@ export function useBingoGame({
   const claimBingo = useCallback(() => {
     if (prevWinBingoRef.current) return;
     prevWinBingoRef.current = true;
+    setHasWonThisGame(true);
     setIsBingoReadyToClaim(false);
     setIsPlaying(false);
 
@@ -282,6 +285,7 @@ export function useBingoGame({
     setIsPlaying(false);
     setTimerProgress(0);
     setIsBingoReadyToClaim(false);
+    setHasWonThisGame(false);
     prevWinBingoRef.current = false;
     podiumCountRef.current = 0;
     setVovoWinPlace(null);
@@ -322,6 +326,8 @@ export function useBingoGame({
     timerProgress,
     winState,
     isBingoReadyToClaim,
+    hasWonThisGame,
+    setHasWonThisGame,
     claimBingo,
     podiumWinners,
     latestVirtualWinner,

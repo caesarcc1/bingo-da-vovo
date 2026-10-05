@@ -5,14 +5,22 @@ import { useWakeLock } from './hooks/useWakeLock';
 import { musicSynthesizer } from './utils/musicSynthesizer';
 import { soundFX } from './utils/soundEffects';
 
+import { SplashScreen } from './components/SplashScreen';
+import { HomeScreen } from './components/HomeScreen';
+import { CountdownOverlay } from './components/CountdownOverlay';
+import { TopBallConveyor } from './components/TopBallConveyor';
 import { BingoCard } from './components/BingoCard';
-import { BallDisplay } from './components/BallDisplay';
+import { BingoClaimButton } from './components/BingoClaimButton';
 import { GameControls } from './components/GameControls';
 import { VictoryModal } from './components/VictoryModal';
 import { FamilyGuideModal } from './components/FamilyGuideModal';
 import { SettingsModal } from './components/SettingsModal';
 
 export default function App() {
+  // Telas da aplicação: 'splash' | 'home' | 'game'
+  const [currentScreen, setCurrentScreen] = useState('splash');
+  const [isPreparing, setIsPreparing] = useState(false);
+
   // Nome personalizável da Vovó salvo no localStorage
   const [vovoName, setVovoName] = useState(() => {
     return localStorage.getItem('vovo_bingo_name') || 'Bingo da Vovó';
@@ -25,6 +33,7 @@ export default function App() {
   // Modais
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Música e Som
   const [musicPlaying, setMusicPlaying] = useState(false);
@@ -57,7 +66,10 @@ export default function App() {
     setAutoSpeed,
     autoMark,
     setAutoMark,
+    timerProgress,
     winState,
+    isBingoReadyToClaim,
+    claimBingo,
     showBingoCelebration,
     setShowBingoCelebration,
     drawNextBall,
@@ -77,17 +89,19 @@ export default function App() {
     window.history.pushState(null, '', window.location.href);
     const handlePopState = () => {
       window.history.pushState(null, '', window.location.href);
-      // Evita sair da página caso ela toque em voltar no Android
+      if (currentScreen === 'game') {
+        setShowExitConfirm(true);
+      }
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [currentScreen]);
 
-  // Prevenir recarregar ou fechar a aba acidentalmente
+  // Prevenir recarregar ou fechar a aba acidentalmente durante uma partida
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (drawnBalls.length > 0) {
+      if (currentScreen === 'game' && drawnBalls.length > 0) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -95,7 +109,7 @@ export default function App() {
 
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [drawnBalls.length]);
+  }, [currentScreen, drawnBalls.length]);
 
   // Primeiro clique na tela inicializa os canais de áudio
   const handleFirstInteraction = () => {
@@ -103,41 +117,104 @@ export default function App() {
     musicSynthesizer.init();
   };
 
+  // Iniciar partida a partir da Tela Inicial
+  const handleStartGameFromHome = () => {
+    handleFirstInteraction();
+    resetGame();
+    setCurrentScreen('game');
+    setIsPreparing(true);
+  };
+
+  // Final da contagem 3-2-1 de preparação
+  const handleCountdownComplete = () => {
+    setIsPreparing(false);
+    drawNextBall(); // sorteia a primeira bola imediatamente
+    setIsPlaying(true); // inicia o ciclo automático
+  };
+
+  // Solicitar retorno ao menu inicial com proteção
+  const handleRequestBackToHome = () => {
+    if (drawnBalls.length === 0) {
+      setCurrentScreen('home');
+    } else {
+      setShowExitConfirm(true);
+    }
+  };
+
+  const handleConfirmExit = () => {
+    cancelSpeech();
+    setIsPlaying(false);
+    setShowExitConfirm(false);
+    setCurrentScreen('home');
+  };
+
   return (
     <div
       onClick={handleFirstInteraction}
       onTouchStart={handleFirstInteraction}
-      className="h-[100dvh] w-screen bg-slate-900 text-slate-800 flex flex-col justify-between overflow-hidden select-none p-2 sm:p-4"
+      className="h-[100dvh] w-screen bg-slate-900 text-slate-800 flex flex-col justify-between overflow-hidden select-none"
       style={{
         background: 'radial-gradient(ellipse at top, #1e293b 0%, #0f172a 100%)'
       }}
     >
-      {/* Área Principal de Jogo: Adaptada para Tablet na Horizontal ou Vertical */}
-      <main className="flex-1 w-full max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-center gap-3 sm:gap-4 overflow-hidden min-h-0">
-        {/* Coluna da Cartela Única da Vovó (Ocupa o maior espaço e foco) */}
-        <div className="flex-1 w-full h-full flex items-center justify-center min-h-0">
-          <BingoCard
-            card={card}
-            markedCellIds={markedCellIds}
-            currentBall={currentBall}
-            onCellClick={toggleCell}
-            winState={winState}
-            vovoName={vovoName}
-          />
-        </div>
+      {/* 1. Tela de Abertura (Splash Screen) */}
+      {currentScreen === 'splash' && (
+        <SplashScreen onFinish={() => setCurrentScreen('home')} />
+      )}
 
-        {/* Coluna Lateral: Bola Gigante do Globo + Controles Grandes */}
-        <div className="w-full lg:w-96 flex flex-row lg:flex-col items-stretch justify-between gap-3 h-full max-h-[360px] lg:max-h-none min-h-0">
-          <div className="flex-1 min-h-0">
-            <BallDisplay
-              currentBall={currentBall}
-              drawnBalls={drawnBalls}
-              onRepeatVoice={repeatCurrentBall}
-              isSpeaking={isSpeaking}
+      {/* 2. Tela Inicial / Lobby da Vovó */}
+      {currentScreen === 'home' && (
+        <HomeScreen
+          vovoName={vovoName}
+          onStartGame={handleStartGameFromHome}
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
+        />
+      )}
+
+      {/* 3. Tela da Partida (Estilo Play Store) */}
+      {currentScreen === 'game' && (
+        <div className="h-full w-full flex flex-col justify-between overflow-hidden relative">
+          {/* Overlay de Preparação e Contagem (3, 2, 1) */}
+          {isPreparing && (
+            <CountdownOverlay
+              onComplete={handleCountdownComplete}
+              vovoName={vovoName}
             />
-          </div>
+          )}
 
-          <div className="w-48 sm:w-64 lg:w-full flex-shrink-0">
+          {/* Topo: Esteira de Bolas Rolando (Play Store Ball Hopper) */}
+          <TopBallConveyor
+            currentBall={currentBall}
+            drawnBalls={drawnBalls}
+            onRepeatVoice={repeatCurrentBall}
+            isSpeaking={isSpeaking}
+            isPlaying={isPlaying}
+            onTogglePlay={() => setIsPlaying(!isPlaying)}
+            onBackToHome={handleRequestBackToHome}
+            progressPercent={timerProgress}
+          />
+
+          {/* Área Central: Cartela Proporcional e Elegante */}
+          <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col items-center justify-center p-2 sm:p-4 min-h-0 overflow-y-auto">
+            <BingoCard
+              card={card}
+              markedCellIds={markedCellIds}
+              currentBall={currentBall}
+              onCellClick={toggleCell}
+              winState={winState}
+              vovoName={vovoName}
+            />
+          </main>
+
+          {/* Rodapé: Botão de BINGO Brilhante + Controles de Apoio */}
+          <footer className="w-full max-w-2xl mx-auto p-2 sm:p-3 flex flex-col items-center gap-2 z-10">
+            <BingoClaimButton
+              isBingoReady={isBingoReadyToClaim}
+              onClaimBingo={claimBingo}
+              markedCount={markedCellIds.size + 1}
+            />
+
             <GameControls
               isPlaying={isPlaying}
               onTogglePlay={() => setIsPlaying(!isPlaying)}
@@ -145,22 +222,54 @@ export default function App() {
               onResetGame={() => {
                 cancelSpeech();
                 resetGame();
+                setIsPreparing(true);
               }}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
               deckRemaining={deck.length}
             />
+          </footer>
+        </div>
+      )}
+
+      {/* Modal de Confirmação para Voltar ao Menu (Proteção contra fechamento acidental) */}
+      {showExitConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-pop-in">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-4 border-amber-400">
+            <h3 className="text-2xl font-black text-slate-900 mb-2">
+              Voltar ao Início?
+            </h3>
+            <p className="text-slate-600 font-medium mb-6">
+              Sua partida atual será encerrada. Deseja mesmo voltar para a tela inicial?
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                type="button"
+                className="py-3 px-4 rounded-2xl font-black text-slate-800 bg-slate-200 hover:bg-slate-300 active:scale-95"
+              >
+                Continuar Jogando
+              </button>
+              <button
+                onClick={handleConfirmExit}
+                type="button"
+                className="py-3 px-4 rounded-2xl font-black text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-md"
+              >
+                Sim, Voltar
+              </button>
+            </div>
           </div>
         </div>
-      </main>
+      )}
 
-      {/* Modais */}
+      {/* Modais Globais */}
       <VictoryModal
         isOpen={showBingoCelebration}
         onClose={() => setShowBingoCelebration(false)}
         onNewGame={() => {
           cancelSpeech();
           resetGame();
+          setIsPreparing(true);
         }}
         vovoName={vovoName}
       />

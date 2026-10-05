@@ -10,6 +10,10 @@ export function useBingoGame({ onBallDrawn, onWin }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [autoSpeed, setAutoSpeed] = useState(10); // segundos por bola
   const [autoMark, setAutoMark] = useState(false); // assistência automática
+  const [timerProgress, setTimerProgress] = useState(0); // 0 a 100% para o anel da bola
+  const [isBingoReadyToClaim, setIsBingoReadyToClaim] = useState(false);
+  const [showBingoCelebration, setShowBingoCelebration] = useState(false);
+
   const [winState, setWinState] = useState({
     isBingo: false,
     completedRows: [],
@@ -17,7 +21,6 @@ export function useBingoGame({ onBallDrawn, onWin }) {
     completedDiagonals: [],
     hasAnyWin: false
   });
-  const [showBingoCelebration, setShowBingoCelebration] = useState(false);
 
   const prevWinBingoRef = useRef(false);
   const currentBall = drawnBalls.length > 0 ? drawnBalls[drawnBalls.length - 1] : null;
@@ -26,6 +29,8 @@ export function useBingoGame({ onBallDrawn, onWin }) {
    * Sortear a próxima bola do globo
    */
   const drawNextBall = useCallback(() => {
+    setTimerProgress(0);
+
     setDeck(prevDeck => {
       if (prevDeck.length === 0) {
         setIsPlaying(false);
@@ -36,8 +41,7 @@ export function useBingoGame({ onBallDrawn, onWin }) {
       const remaining = prevDeck.slice(1);
 
       setDrawnBalls(prevDrawn => {
-        const nextDrawn = [...prevDrawn, nextBall];
-        return nextDrawn;
+        return [...prevDrawn, nextBall];
       });
 
       // Efeito sonoro do globo e notificação para voz
@@ -71,18 +75,27 @@ export function useBingoGame({ onBallDrawn, onWin }) {
   }, [autoMark, onBallDrawn]);
 
   /**
-   * Timer para sorteio automático em ritmo pausado
+   * Timer contínuo para o anel de progresso da bola e sorteio no ritmo escolhido
    */
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying || deck.length === 0) {
+      setTimerProgress(0);
+      return;
+    }
+
+    const intervalStepMs = 100;
+    const totalMs = autoSpeed * 1000;
 
     const timer = setInterval(() => {
-      if (deck.length > 0) {
-        drawNextBall();
-      } else {
-        setIsPlaying(false);
-      }
-    }, autoSpeed * 1000);
+      setTimerProgress(prev => {
+        const next = prev + (intervalStepMs / totalMs) * 100;
+        if (next >= 100) {
+          drawNextBall();
+          return 0;
+        }
+        return next;
+      });
+    }, intervalStepMs);
 
     return () => clearInterval(timer);
   }, [isPlaying, autoSpeed, deck.length, drawNextBall]);
@@ -115,27 +128,39 @@ export function useBingoGame({ onBallDrawn, onWin }) {
   }, [drawnBalls]);
 
   /**
-   * Recalcular vitórias e disparar comemoração
+   * Recalcular vitórias e preparar o botão de BINGO
    */
   useEffect(() => {
     const wins = checkBingoWins(card, markedCellIds);
     setWinState(wins);
 
-    // Se bateu BINGO completo e ainda não celebrou
+    // Se completou a cartela e ainda não celebrou
     if (wins.isBingo && !prevWinBingoRef.current) {
-      prevWinBingoRef.current = true;
+      setIsBingoReadyToClaim(true);
       setIsPlaying(false);
-      setShowBingoCelebration(true);
-      soundFX.playBingoFanfare();
-      if (onWin) onWin();
     }
-  }, [card, markedCellIds, onWin]);
+  }, [card, markedCellIds]);
+
+  /**
+   * Reivindicar e celebrar o BINGO
+   */
+  const claimBingo = useCallback(() => {
+    if (prevWinBingoRef.current) return;
+    prevWinBingoRef.current = true;
+    setIsBingoReadyToClaim(false);
+    setIsPlaying(false);
+    setShowBingoCelebration(true);
+    soundFX.playBingoFanfare();
+    if (onWin) onWin();
+  }, [onWin]);
 
   /**
    * Reiniciar jogo com nova cartela e novo globo
    */
   const resetGame = useCallback(() => {
     setIsPlaying(false);
+    setTimerProgress(0);
+    setIsBingoReadyToClaim(false);
     setShowBingoCelebration(false);
     prevWinBingoRef.current = false;
     setCard(generateBingoCard());
@@ -163,7 +188,10 @@ export function useBingoGame({ onBallDrawn, onWin }) {
     setAutoSpeed,
     autoMark,
     setAutoMark,
+    timerProgress,
     winState,
+    isBingoReadyToClaim,
+    claimBingo,
     showBingoCelebration,
     setShowBingoCelebration,
     drawNextBall,

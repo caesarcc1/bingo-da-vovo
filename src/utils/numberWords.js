@@ -18,19 +18,6 @@ const NUMEROS_PT = {
   71: 'setenta e um', 72: 'setenta e dois', 73: 'setenta e três', 74: 'setenta e quatro', 75: 'setenta e cinco'
 };
 
-const DIGITOS_PT = {
-  '0': 'zero',
-  '1': 'um',
-  '2': 'dois',
-  '3': 'três',
-  '4': 'quatro',
-  '5': 'cinco',
-  '6': 'seis',
-  '7': 'sete',
-  '8': 'oito',
-  '9': 'nove'
-};
-
 /**
  * Retorna a coluna/letra do bingo para um número de 1 a 75
  */
@@ -90,17 +77,11 @@ export const BINGO_COLORS = {
 };
 
 /**
- * Gera a frase completa e didática para narração em voz alta
- * Ex: "Letra B... número doze! Doze! Um e dois!"
+ * Nova narração estilo Play Store: fala a letra e repete o número inteiro 2 vezes
+ * Exemplo: "Letra B... doze! Doze!"
  */
 export function getNarrationPhrase(num) {
   const letter = getBingoLetter(num);
   const nome = NUMEROS_PT[num] || String(num);
-  
-  if (num < 10) {
-    return `Letra ${letter}... número ${num}! ${nome}!`;
-  }
-  
-  const digitos = String(num).split('').map(d => DIGITOS_PT[d]).join(' e ');
-  return `Letra ${letter}... número ${num}! ${nome}! ${digitos}!`;
+  return `Letra ${letter}... ${nome}! ${nome}!`;
 }

@@ -21,10 +21,12 @@
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
     <script>
-      // Registrar Service Worker para PWA
+      // Forçar atualização do Service Worker e limpar cache antigo da Vercel
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').catch(() => {});
+          navigator.serviceWorker.register('/sw.js').then((reg) => {
+            reg.update().catch(() => {});
+          }).catch(() => {});
         });
       }
     </script>

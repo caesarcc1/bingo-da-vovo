@@ -3,7 +3,7 @@ import confetti from 'canvas-confetti';
 import { Trophy, Sparkles } from 'lucide-react';
 import { VirtualPlayerAvatar } from './VirtualPlayerAvatar';
 
-export function VictoryModal({ isOpen, onClose, onNewGame, vovoName, winPlace = 1, winPattern = 'Linha' }) {
+export function VictoryModal({ isOpen, onClose, onNewGame, vovoName, winPlace = 1, winPattern = 'Linha', playerPhoto = null }) {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -39,11 +39,12 @@ export function VictoryModal({ isOpen, onClose, onNewGame, vovoName, winPlace = 
         {/* Faixa de Brilho Dourado */}
         <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-400/20 rounded-full blur-2xl pointer-events-none" />
 
-        {/* FOTO DA VOVÓ NO PÓDIO COM MEDALHA DOURADA */}
+        {/* FOTO DO JOGADOR NO PÓDIO COM MEDALHA DOURADA */}
         <div className="relative mb-3">
           <VirtualPlayerAvatar
             playerId="vovo"
-            isVovo={true}
+            customPhoto={playerPhoto}
+            isVovo={!playerPhoto || playerPhoto === '/vovo.jpg'}
             size={120}
             className="border-6 border-amber-400 shadow-2xl ring-8 ring-amber-300/60"
           />

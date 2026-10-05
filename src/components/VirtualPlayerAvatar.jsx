@@ -1,19 +1,18 @@
 import React from 'react';
 
-export function VirtualPlayerAvatar({ playerId, size = 64, className = '', isVovo = false }) {
-  if (isVovo || playerId === 'vovo') {
+export function VirtualPlayerAvatar({ playerId, size = 64, className = '', isVovo = false, customPhoto = null }) {
+  if (customPhoto || isVovo || playerId === 'vovo') {
     return (
       <div
         className={`relative rounded-full overflow-hidden border-4 border-amber-400 shadow-lg flex-shrink-0 bg-amber-100 ${className}`}
         style={{ width: size, height: size }}
       >
         <img
-          src="/vovo.jpg"
-          alt="Foto da Vovó"
+          src={customPhoto || '/vovo.jpg'}
+          alt="Foto do Jogador"
           className="w-full h-full object-cover object-top"
           onError={(e) => {
-            // Fallback caso a imagem demore para carregar
-            e.target.style.display = 'none';
+            e.currentTarget.src = '/vovo.jpg';
           }}
         />
         {/* Borda dourada brilhante */}

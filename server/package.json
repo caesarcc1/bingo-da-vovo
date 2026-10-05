@@ -1,0 +1,16 @@
+{
+  "name": "bingo-da-vovo-server",
+  "version": "1.0.0",
+  "description": "Backend Socket.io e Sinalizador WebRTC para o Bingo da Família na Hetzner",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  }
+}

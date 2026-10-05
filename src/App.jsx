@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useBingoGame } from './hooks/useBingoGame';
 import { useVoiceAnnouncer } from './hooks/useVoiceAnnouncer';
 import { useWakeLock } from './hooks/useWakeLock';
+import { useUserProfile } from './hooks/useUserProfile';
+import { useFamilySocket } from './hooks/useFamilySocket';
+import { useWebRTCVoice } from './hooks/useWebRTCVoice';
+import { useBackgroundKeepalive } from './hooks/useBackgroundKeepalive';
 import { musicSynthesizer } from './utils/musicSynthesizer';
 import { soundFX } from './utils/soundEffects';
 
@@ -18,24 +22,24 @@ import { VictoryModal } from './components/VictoryModal';
 import { GameFinishedModal } from './components/GameFinishedModal';
 import { FamilyGuideModal } from './components/FamilyGuideModal';
 import { SettingsModal } from './components/SettingsModal';
+import { ProfileModal } from './components/ProfileModal';
+import { FamilyMembersList } from './components/FamilyMembersList';
+import { VoiceChatBar } from './components/VoiceChatBar';
+import { MobileNetoLayout } from './components/MobileNetoLayout';
+import { FloatingPipWindow } from './components/FloatingPipWindow';
 
 export default function App() {
   // Telas da aplicação: 'splash' | 'home' | 'game'
   const [currentScreen, setCurrentScreen] = useState('splash');
   const [isPreparing, setIsPreparing] = useState(false);
 
-  // Nome personalizável da Vovó salvo no localStorage
-  const [vovoName, setVovoName] = useState(() => {
-    return localStorage.getItem('vovo_bingo_name') || 'Bingo da Vovó';
-  });
-
-  useEffect(() => {
-    localStorage.setItem('vovo_bingo_name', vovoName);
-  }, [vovoName]);
+  // Perfil da Vovó ou Neto
+  const { profile, updateProfile, uploadPhoto, isVovo } = useUserProfile();
 
   // Modais e Referência para o Botão Voltar do Android
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showBingoCelebration, setShowBingoCelebration] = useState(false);
   const activeModalRef = useRef(null);
@@ -74,6 +78,8 @@ export default function App() {
     setAutoSpeed,
     autoMark,
     setAutoMark,
+    autoBingo,
+    setAutoBingo,
     timerProgress,
     winState,
     isBingoReadyToClaim,
@@ -84,16 +90,20 @@ export default function App() {
     isGameOver,
     vovoWinPlace,
     drawNextBall,
+    applyRemoteBall,
     toggleCell,
     resetGame
   } = useBingoGame({
+    playerName: profile.name,
     onBallDrawn: (num) => {
       speakNumber(num);
+      emitBallDrawn(num);
     },
-    onWin: (place, pattern) => {
+    onWin: (place, pattern, winnerObj) => {
       cancelSpeech();
       activeModalRef.current = 'victory';
       setShowBingoCelebration(true);
+      emitClaimBingo(winnerObj);
     },
     onVirtualWin: (winner) => {
       soundFX.playBallDrawn();
@@ -103,6 +113,53 @@ export default function App() {
       activeModalRef.current = 'gameover';
     }
   });
+
+  // Conexão Socket.io com servidor Hetzner
+  const {
+    isConnected,
+    roomUsers,
+    socket,
+    emitBallDrawn,
+    emitClaimBingo,
+    emitSpeakingState
+  } = useFamilySocket({
+    profile,
+    onRemoteBallDrawn: (ball) => {
+      applyRemoteBall(ball);
+      speakNumber(ball);
+    },
+    onRemoteBingoClaimed: (winner, podium) => {
+      setLatestVirtualWinner(winner);
+    }
+  });
+
+  // WebRTC Voz estilo Discord
+  const voiceProps = useWebRTCVoice({
+    socket,
+    isConnected,
+    profile,
+    onSpeakingChange: (isTalking) => {
+      emitSpeakingState(isTalking);
+    }
+  });
+
+  // Execução contínua em segundo plano no celular para Netos (Web Worker + Audio keepalive)
+  useBackgroundKeepalive({
+    isAutoMark: profile.autoMark,
+    isAutoBingo: profile.autoBingo,
+    onBackgroundTick: () => {
+      // Keepalive tick garante que timers não congelem
+    }
+  });
+
+  // Sincroniza preferências do perfil com os estados do motor de bingo
+  useEffect(() => {
+    setAutoMark(profile.autoMark);
+  }, [profile.autoMark, setAutoMark]);
+
+  useEffect(() => {
+    setAutoBingo(profile.autoBingo);
+  }, [profile.autoBingo, setAutoBingo]);
 
   // Funções para gerenciar abertura e fechamento de modais com histórico do Android
   const openModal = (modalName, setOpenFn) => {
@@ -124,6 +181,13 @@ export default function App() {
 
     const handlePopState = () => {
       const modal = activeModalRef.current;
+
+      if (modal === 'profile') {
+        setIsProfileOpen(false);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
 
       if (modal === 'settings') {
         setIsSettingsOpen(false);
@@ -257,18 +321,55 @@ export default function App() {
         <SplashScreen onFinish={() => setCurrentScreen('home')} />
       )}
 
-      {/* 2. Tela Inicial / Lobby da Vovó */}
+      {/* 2. Tela Inicial / Lobby com Perfil da Família */}
       {currentScreen === 'home' && (
         <HomeScreen
-          vovoName={vovoName}
+          vovoName={profile.role === 'vovo' ? profile.name : 'Bingo da Família'}
           onStartGame={handleStartGameFromHome}
           onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
           onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
+          profile={profile}
+          onOpenProfile={() => openModal('profile', setIsProfileOpen)}
+          roomUsers={roomUsers}
+          isConnected={isConnected}
         />
       )}
 
-      {/* 3. Tela da Partida (Estilo Play Store com Controles nas Laterais) */}
-      {currentScreen === 'game' && (
+      {/* 3. Tela da Partida: Modo Celular (Neto) vs Modo Tablet (Vovó) */}
+      {currentScreen === 'game' && !isVovo && (
+        <MobileNetoLayout
+          card={card}
+          currentBall={currentBall}
+          drawnBalls={drawnBalls}
+          markedCellIds={markedCellIds}
+          onCellClick={toggleCell}
+          winState={winState}
+          isBingoReady={isBingoReadyToClaim}
+          onClaimBingo={claimBingo}
+          onRequestExit={handleRequestExit}
+          autoMark={autoMark}
+          onToggleAutoMark={() => {
+            const next = !autoMark;
+            setAutoMark(next);
+            updateProfile({ autoMark: next });
+          }}
+          autoBingo={autoBingo}
+          onToggleAutoBingo={() => {
+            const next = !autoBingo;
+            setAutoBingo(next);
+            updateProfile({ autoBingo: next });
+          }}
+          profile={profile}
+          onOpenProfile={() => openModal('profile', setIsProfileOpen)}
+          roomUsers={roomUsers}
+          isConnected={isConnected}
+          voiceProps={voiceProps}
+          musicPlaying={musicPlaying}
+          onToggleMusic={handleToggleMusic}
+        />
+      )}
+
+      {currentScreen === 'game' && isVovo && (
         <div className="h-full w-full flex flex-col justify-between overflow-hidden relative">
           {/* Banner de Notificação de Jogador Virtual Vencedor */}
           <VirtualWinBanner
@@ -280,11 +381,11 @@ export default function App() {
           {isPreparing && (
             <CountdownOverlay
               onComplete={handleCountdownComplete}
-              vovoName={vovoName}
+              vovoName={profile.name}
             />
           )}
 
-          {/* Topo: Esteira de Bolas com Botão VOLTAR 50% Maior */}
+          {/* Topo: Esteira de Bolas com Botão VOLTAR 50% Maior + Espaço de Voz da Família */}
           <TopBallConveyor
             currentBall={currentBall}
             drawnBalls={drawnBalls}
@@ -294,6 +395,36 @@ export default function App() {
             onTogglePlay={() => setIsPlaying(!isPlaying)}
             onBackToHome={handleRequestExit}
             progressPercent={timerProgress}
+            familySlot={
+              <div className="flex items-center gap-2">
+                <FamilyMembersList
+                  roomUsers={roomUsers}
+                  isConnected={isConnected}
+                  currentProfile={profile}
+                  onOpenProfile={() => openModal('profile', setIsProfileOpen)}
+                  compact={true}
+                />
+                <VoiceChatBar
+                  isVovo={true}
+                  isMuted={voiceProps.isMuted}
+                  onToggleMute={() => voiceProps.setIsMuted(!voiceProps.isMuted)}
+                  isPushToTalk={false}
+                  onTogglePushToTalk={() => {}}
+                  isTalking={voiceProps.isTalking}
+                  hasMicPermission={voiceProps.hasMicPermission}
+                  onInitMic={voiceProps.initMicrophone}
+                  onPushToTalkStart={() => {}}
+                  onPushToTalkEnd={() => {}}
+                />
+                <FloatingPipWindow
+                  currentBall={currentBall}
+                  card={card}
+                  markedCellIds={markedCellIds}
+                  roomUsers={roomUsers}
+                  isAutoMark={autoMark}
+                />
+              </div>
+            }
           />
 
           {/* Sub-barra: Indicador de Vagas do Pódio (1º, 2º e 3º Lugar) */}
@@ -307,6 +438,7 @@ export default function App() {
             <LeftCaregiverDock
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
               onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
+              onOpenProfile={() => openModal('profile', setIsProfileOpen)}
             />
 
             {/* 2. Centro: Cartela 100% Visível com Realce Dourado em Linhas/Diagonais/Pontas */}
@@ -317,7 +449,7 @@ export default function App() {
                 currentBall={currentBall}
                 onCellClick={toggleCell}
                 winState={winState}
-                vovoName={vovoName}
+                vovoName={profile.name}
               />
             </div>
 
@@ -371,7 +503,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal de Vitória da Vovó com a Foto no Pódio */}
+      {/* Modal de Vitória com a Foto do Jogador no Pódio */}
       <VictoryModal
         isOpen={showBingoCelebration}
         onClose={() => closeModal('victory', setShowBingoCelebration)}
@@ -380,7 +512,8 @@ export default function App() {
           resetGame();
           setIsPreparing(true);
         }}
-        vovoName={vovoName}
+        vovoName={profile.name}
+        playerPhoto={profile.photo}
         winPlace={vovoWinPlace || 1}
         winPattern={winState.patternDescription || 'Linha'}
       />
@@ -394,23 +527,37 @@ export default function App() {
           resetGame();
           setIsPreparing(true);
         }}
-        vovoName={vovoName}
+        vovoName={profile.name}
       />
 
+      {/* Modal de Dicas para Fixar/Blindar no Tablet */}
       <FamilyGuideModal
         isOpen={isFamilyGuideOpen}
         onClose={() => closeModal('guide', setIsFamilyGuideOpen)}
       />
 
+      {/* Modal de Perfil e Foto da Família */}
+      <ProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => closeModal('profile', setIsProfileOpen)}
+        profile={profile}
+        onUpdateProfile={updateProfile}
+        onUploadPhoto={uploadPhoto}
+      />
+
+      {/* Modal de Configurações Técnicas */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => closeModal('settings', setIsSettingsOpen)}
-        vovoName={vovoName}
-        setVovoName={setVovoName}
+        vovoName={profile.name}
+        setVovoName={(name) => updateProfile({ name })}
         autoSpeed={autoSpeed}
         setAutoSpeed={setAutoSpeed}
         autoMark={autoMark}
-        setAutoMark={setAutoMark}
+        setAutoMark={(val) => {
+          setAutoMark(val);
+          updateProfile({ autoMark: val });
+        }}
         voiceMuted={voiceMuted}
         setVoiceMuted={setVoiceMuted}
         musicTheme={musicTheme}

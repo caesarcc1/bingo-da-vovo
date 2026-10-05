@@ -3,10 +3,11 @@
   "short_name": "Bingo Vovó",
   "description": "Bingo acessível, carinhoso e sem propagandas com números grandes e narração de voz para tablet.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0f172a",
-  "theme_color": "#0f172a",
+  "background_color": "#020617",
+  "theme_color": "#1e3a8a",
   "icons": [
     {
       "src": "/icon.svg",

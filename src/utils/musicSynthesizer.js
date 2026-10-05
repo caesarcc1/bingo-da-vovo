@@ -1,174 +1,117 @@
-// Sintetizador de trilha sonora relaxante via Web Audio API
-// Projetado especialmente para terceira idade: timbres aveludados, sem frequências estridentes
+// Trilha sonora aconchegante do Bingo da Vovó
+// Toca "Bossa Antigua" (Kevin MacLeod - incompetech.com, sob licença Creative Commons Attribution 4.0)
+// Recursos de acessibilidade para idosos:
+// 1. Volume inicial suave e discreto (0.14) para não cansar o ouvido
+// 2. Abaixa suavemente (ducking) enquanto a voz narra a pedra sorteada
+// 3. Pausa/desliga automaticamente quando familiares entram na sala para não atrapalhar conversas
+// 4. Fallback automático para sintetizador Web Audio caso o áudio falhe
 
 class MusicSynthesizer {
   constructor() {
-    this.ctx = null;
+    this.audio = null;
     this.isPlaying = false;
-    this.currentTheme = 'calmo'; // 'calmo' | 'alegre' | 'classico'
-    this.volume = 0.45; // volume ideal para alto-falante de tablet
-    this.masterGain = null;
-    this.filter = null;
-    this.intervalId = null;
-    this.step = 0;
-    this.isDucked = false; // reduz volume quando a voz fala
+    this.baseVolume = 0.14; // Volume suave por padrão
+    this.currentTheme = 'bossa';
+    this.isDucked = false;
+    this.isFamilyInRoom = false;
+    this.pausedByFamily = false;
+    this.fadeInterval = null;
+    this.useSynthFallback = false;
+
+    // Web Audio Fallback
+    this.synthCtx = null;
+    this.synthMasterGain = null;
+    this.synthFilter = null;
+    this.synthIntervalId = null;
+    this.synthStep = 0;
   }
 
   async init() {
-    if (!this.ctx) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (AudioCtx) {
-        this.ctx = new AudioCtx();
+    if (typeof window === 'undefined') return;
 
-        // Filtro passa-baixa aveludado (1800Hz) - quente, sem agudos estridentes e bem audível no tablet
-        this.filter = this.ctx.createBiquadFilter();
-        this.filter.type = 'lowpass';
-        this.filter.frequency.setValueAtTime(1800, this.ctx.currentTime);
+    if (!this.audio) {
+      try {
+        this.audio = new Audio('/audio/bossa.mp3');
+        this.audio.loop = true;
+        this.audio.volume = this.baseVolume;
+        this.audio.preload = 'auto';
 
-        this.masterGain = this.ctx.createGain();
-        this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
-
-        this.filter.connect(this.masterGain);
-        this.masterGain.connect(this.ctx.destination);
+        this.audio.addEventListener('error', () => {
+          console.warn('[MusicSynthesizer] MP3 não carregou. Ativando sintetizador fallback.');
+          this.useSynthFallback = true;
+        });
+      } catch (err) {
+        this.useSynthFallback = true;
       }
     }
 
-    if (this.ctx && this.ctx.state === 'suspended') {
+    if (this.synthCtx && this.synthCtx.state === 'suspended') {
       try {
-        await this.ctx.resume();
+        await this.synthCtx.resume();
       } catch (e) {}
     }
   }
 
-  setVolume(val) {
-    this.volume = Math.max(0, Math.min(1, val));
-    if (this.masterGain && this.ctx) {
-      const target = this.isDucked ? this.volume * 0.3 : this.volume;
-      this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.1);
-    }
-  }
+  fadeTo(targetVolume, duration = 300) {
+    if (!this.audio || this.useSynthFallback) return;
+    if (this.fadeInterval) clearInterval(this.fadeInterval);
 
-  // Reduz volume suavemente enquanto a voz narra a pedra
-  duck(enable) {
-    this.isDucked = enable;
-    if (this.masterGain && this.ctx) {
-      const target = enable ? this.volume * 0.3 : this.volume;
-      this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.15);
-    }
-  }
+    const steps = 12;
+    const stepTime = duration / steps;
+    const startVolume = this.audio.volume;
+    const diff = targetVolume - startVolume;
+    let stepCount = 0;
 
-  setTheme(theme) {
-    this.currentTheme = theme;
-    this.step = 0;
-    if (this.isPlaying) {
-      this.stop();
-      this.start();
-    }
-  }
+    this.fadeInterval = setInterval(() => {
+      stepCount++;
+      const nextVol = Math.max(0, Math.min(1, startVolume + (diff * (stepCount / steps))));
+      if (this.audio) this.audio.volume = nextVol;
 
-  playNote(freq, time, duration, gainAmount = 0.28) {
-    if (!this.ctx || !this.isPlaying) return;
-    try {
-      const osc = this.ctx.createOscillator();
-      const noteGain = this.ctx.createGain();
-
-      osc.type = 'triangle'; // timbre doce, redondo e acolhedor
-      osc.frequency.setValueAtTime(freq, time);
-
-      // Envelope macio
-      noteGain.gain.setValueAtTime(0.001, time);
-      noteGain.gain.linearRampToValueAtTime(gainAmount, time + 0.05);
-      noteGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
-
-      osc.connect(noteGain);
-      noteGain.connect(this.filter);
-
-      osc.start(time);
-      osc.stop(time + duration + 0.05);
-    } catch (e) {}
-  }
-
-  tick() {
-    if (!this.isPlaying || !this.ctx) return;
-    const now = this.ctx.currentTime;
-
-    if (this.currentTheme === 'calmo') {
-      // Progressão suave estilo Bossa/MPB acústica (Cmaj7 -> Am7 -> Dm7 -> G7)
-      const chordPool = [
-        [261.63, 329.63, 392.00, 493.88], // Cmaj7 (C E G B)
-        [220.00, 261.63, 329.63, 392.00], // Am7 (A C E G)
-        [293.66, 349.23, 440.00, 523.25], // Dm7 (D F A C)
-        [196.00, 246.94, 293.66, 392.00]  // G7 (G B D F)
-      ];
-      const chordIndex = Math.floor(this.step / 4) % chordPool.length;
-      const chord = chordPool[chordIndex];
-      const noteIndex = this.step % 4;
-
-      // Arpejo delicado e aconchegante
-      this.playNote(chord[noteIndex], now, 0.75, 0.28);
-      if (noteIndex === 0) {
-        // Baixo acústico suave
-        this.playNote(chord[0] / 2, now, 0.95, 0.35);
+      if (stepCount >= steps) {
+        clearInterval(this.fadeInterval);
+        this.fadeInterval = null;
+        if (this.audio) this.audio.volume = targetVolume;
       }
-    } else if (this.currentTheme === 'alegre') {
-      // Melodia animada e festiva em tom maior
-      const melody = [
-        { f: 261.63, b: 130.81 }, // Dó
-        { f: 329.63, b: null },   // Mi
-        { f: 392.00, b: 196.00 }, // Sol
-        { f: 440.00, b: null },   // Lá
-        { f: 523.25, b: 130.81 }, // Dó agudo
-        { f: 392.00, b: null },   // Sol
-        { f: 349.23, b: 174.61 }, // Fá
-        { f: 293.66, b: null }    // Ré
-      ];
-      const cur = melody[this.step % melody.length];
-      this.playNote(cur.f, now, 0.4, 0.3);
-      if (cur.b) {
-        this.playNote(cur.b, now, 0.5, 0.32);
-      }
-    } else if (this.currentTheme === 'classico') {
-      // Valsinha clássica (1 - 2 - 3)
-      const waltzChords = [
-        { bass: 130.81, chord: [261.63, 329.63, 392.00] }, // C
-        { bass: 174.61, chord: [261.63, 349.23, 440.00] }, // F
-        { bass: 196.00, chord: [246.94, 293.66, 392.00] }  // G
-      ];
-      const wIndex = Math.floor(this.step / 3) % waltzChords.length;
-      const beat = this.step % 3;
-      const w = waltzChords[wIndex];
-
-      if (beat === 0) {
-        // Tempo 1: Baixo
-        this.playNote(w.bass, now, 0.65, 0.36);
-      } else {
-        // Tempos 2 e 3: Acordes suaves
-        w.chord.forEach(f => this.playNote(f, now, 0.45, 0.22));
-      }
-    }
-
-    this.step++;
+    }, stepTime);
   }
 
   async start() {
     await this.init();
-    if (this.isPlaying) return;
+
+    // Se houver parentes na sala, mantém em silêncio para conversarem
+    if (this.isFamilyInRoom) {
+      this.pausedByFamily = true;
+      return;
+    }
+
     this.isPlaying = true;
+    this.pausedByFamily = false;
 
-    // Dispara a primeira nota imediatamente
-    this.tick();
-
-    // Ritmo tranquilo
-    const intervalTime = this.currentTheme === 'classico' ? 520 : 440;
-    this.intervalId = setInterval(() => this.tick(), intervalTime);
+    if (this.audio && !this.useSynthFallback) {
+      try {
+        this.audio.currentTime = this.audio.currentTime || 0;
+        this.audio.volume = this.isDucked ? 0.02 : this.baseVolume;
+        const playPromise = this.audio.play();
+        if (playPromise !== undefined) {
+          await playPromise;
+        }
+      } catch (err) {
+        // Bloqueio de autoplay inicial do navegador -> ativa fallback do Web Audio
+        this.startSynth();
+      }
+    } else {
+      this.startSynth();
+    }
   }
 
   stop() {
     this.isPlaying = false;
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-      this.intervalId = null;
+    if (this.audio) {
+      try {
+        this.audio.pause();
+      } catch (e) {}
     }
+    this.stopSynth();
   }
 
   toggle() {
@@ -178,6 +121,130 @@ class MusicSynthesizer {
       this.start();
     }
     return this.isPlaying;
+  }
+
+  // Reduz volume suavemente enquanto a voz do sorteio fala a pedra
+  duck(enable) {
+    this.isDucked = enable;
+    const target = enable ? 0.02 : this.baseVolume;
+
+    if (this.audio && !this.useSynthFallback && this.isPlaying) {
+      this.fadeTo(target, 250);
+    } else if (this.synthMasterGain && this.synthCtx) {
+      const synthTarget = enable ? this.baseVolume * 0.2 : this.baseVolume;
+      this.synthMasterGain.gain.setTargetAtTime(synthTarget, this.synthCtx.currentTime, 0.15);
+    }
+  }
+
+  setVolume(val) {
+    this.baseVolume = Math.max(0, Math.min(1, val));
+    if (this.audio && this.isPlaying) {
+      this.fadeTo(this.isDucked ? 0.02 : this.baseVolume, 150);
+    }
+    if (this.synthMasterGain && this.synthCtx) {
+      this.synthMasterGain.gain.setValueAtTime(this.baseVolume, this.synthCtx.currentTime);
+    }
+  }
+
+  setTheme(theme) {
+    this.currentTheme = theme;
+  }
+
+  /**
+   * Chamado quando o status de parentes na sala muda.
+   * Se houver outro parente na sala, desliga a música para priorizar a voz da família.
+   * Se os parentes saírem e a vovó ficar sozinha, religa a música de fundo automaticamente.
+   */
+  setFamilyInRoom(inRoom) {
+    this.isFamilyInRoom = inRoom;
+    if (inRoom) {
+      if (this.isPlaying) {
+        this.pausedByFamily = true;
+        this.stop();
+      }
+    } else {
+      if (this.pausedByFamily) {
+        this.pausedByFamily = false;
+        this.start();
+      }
+    }
+  }
+
+  // ==========================================
+  // SINTETIZADOR WEB AUDIO (Plano B Fallback)
+  // ==========================================
+  initSynth() {
+    if (!this.synthCtx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        this.synthCtx = new AudioCtx();
+        this.synthFilter = this.synthCtx.createBiquadFilter();
+        this.synthFilter.type = 'lowpass';
+        this.synthFilter.frequency.setValueAtTime(1400, this.synthCtx.currentTime);
+
+        this.synthMasterGain = this.synthCtx.createGain();
+        this.synthMasterGain.gain.setValueAtTime(this.baseVolume, this.synthCtx.currentTime);
+
+        this.synthFilter.connect(this.synthMasterGain);
+        this.synthMasterGain.connect(this.synthCtx.destination);
+      }
+    }
+  }
+
+  playSynthNote(freq, time, duration, gainAmount = 0.15) {
+    if (!this.synthCtx || !this.isPlaying) return;
+    try {
+      const osc = this.synthCtx.createOscillator();
+      const noteGain = this.synthCtx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, time);
+
+      noteGain.gain.setValueAtTime(0.001, time);
+      noteGain.gain.linearRampToValueAtTime(gainAmount, time + 0.05);
+      noteGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
+
+      osc.connect(noteGain);
+      noteGain.connect(this.synthFilter);
+
+      osc.start(time);
+      osc.stop(time + duration + 0.05);
+    } catch (e) {}
+  }
+
+  tickSynth() {
+    if (!this.isPlaying || !this.synthCtx) return;
+    const now = this.synthCtx.currentTime;
+
+    const chords = [
+      [261.63, 329.63, 392.00, 493.88], // Cmaj7
+      [220.00, 261.63, 329.63, 392.00], // Am7
+      [293.66, 349.23, 440.00, 523.25], // Dm7
+      [196.00, 246.94, 293.66, 392.00]  // G7
+    ];
+    const chordIndex = Math.floor(this.synthStep / 4) % chords.length;
+    const chord = chords[chordIndex];
+    const noteIndex = this.synthStep % 4;
+
+    this.playSynthNote(chord[noteIndex], now, 0.75, 0.12);
+    if (noteIndex === 0) {
+      this.playSynthNote(chord[0] / 2, now, 0.95, 0.18);
+    }
+    this.synthStep++;
+  }
+
+  startSynth() {
+    this.initSynth();
+    if (this.synthIntervalId) clearInterval(this.synthIntervalId);
+    this.tickSynth();
+    this.synthIntervalId = setInterval(() => this.tickSynth(), 480);
+  }
+
+  stopSynth() {
+    if (this.synthIntervalId) {
+      clearInterval(this.synthIntervalId);
+      this.synthIntervalId = null;
+    }
   }
 }
 

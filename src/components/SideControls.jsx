@@ -11,7 +11,8 @@ export function SideControls({
   musicPlaying,
   onToggleMusic,
   onOpenSettings,
-  onOpenFamilyGuide
+  onOpenFamilyGuide,
+  hasOtherFamilyInRoom = false
 }) {
   const [resetHoldProgress, setResetHoldProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -98,15 +99,18 @@ export function SideControls({
         type="button"
         className={`
           w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-2xl border text-xs font-bold shadow active:scale-95 transition-all
-          ${musicPlaying
-            ? 'bg-amber-950/70 border-amber-500/80 text-amber-200 hover:bg-amber-900/80'
-            : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-700'
+          ${hasOtherFamilyInRoom
+            ? 'bg-slate-850 border-slate-700/60 text-slate-400'
+            : (musicPlaying
+                ? 'bg-amber-950/70 border-amber-500/80 text-amber-200 hover:bg-amber-900/80'
+                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-700'
+              )
           }
         `}
-        title="Ligar ou pausar a música de fundo"
+        title={hasOtherFamilyInRoom ? 'Música desligada para você ouvir a voz da sua família com total clareza' : 'Ligar ou pausar a música de fundo'}
       >
-        <Music className={`w-3.5 h-3.5 flex-shrink-0 ${musicPlaying ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
-        <span className="truncate">{musicPlaying ? 'Música: On' : 'Música: Off'}</span>
+        <Music className={`w-3.5 h-3.5 flex-shrink-0 ${musicPlaying && !hasOtherFamilyInRoom ? 'text-amber-400 animate-pulse' : 'text-slate-400'}`} />
+        <span className="truncate">{hasOtherFamilyInRoom ? 'Música: Silenciosa' : (musicPlaying ? 'Música: On' : 'Música: Off')}</span>
       </button>
 
       {/* 4. GRANDE BOTÃO SAIR (Pausa o jogo e pede confirmação) */}

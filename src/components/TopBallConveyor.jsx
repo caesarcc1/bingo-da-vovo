@@ -10,7 +10,8 @@ export function TopBallConveyor({
   isPlaying,
   onTogglePlay,
   onBackToHome,
-  progressPercent = 0
+  progressPercent = 0,
+  isOnline = true
 }) {
   const currentLetter = currentBall ? getBingoLetter(currentBall) : null;
   const currentStyle = currentLetter ? BINGO_COLORS[currentLetter] : null;
@@ -66,6 +67,14 @@ export function TopBallConveyor({
         <span className="text-xs sm:text-sm font-black text-slate-400 hidden md:inline-block ml-1">
           {drawnBalls.length}/75 Bolas
         </span>
+
+        {!isOnline && (
+          <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 text-xs font-black animate-pulse flex items-center gap-1 shadow-sm">
+            <span>🍀</span>
+            <span className="hidden sm:inline">Modo Offline (Netos Virtuais)</span>
+            <span className="sm:hidden">Offline</span>
+          </span>
+        )}
       </div>
 
       {/* Direita: Esteira de Bolas Estilo Play Store */}

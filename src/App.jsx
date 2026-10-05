@@ -49,8 +49,24 @@ export default function App() {
     const saved = localStorage.getItem('vovo_music_enabled');
     return saved !== null ? saved === 'true' : true;
   });
-  const [musicTheme, setMusicTheme] = useState('calmo');
-  const [musicVolume, setMusicVolume] = useState(0.45);
+  const [musicTheme, setMusicTheme] = useState('bossa');
+  const [musicVolume, setMusicVolume] = useState(0.14);
+
+  // Status de conectividade (Online / Offline)
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Mantém tela do tablet sempre acesa
   const { isLocked: isScreenLocked } = useWakeLock();
@@ -162,6 +178,15 @@ export default function App() {
       emitSpeakingState(isTalking);
     }
   });
+
+  // Verifica se há outros membros da família na sala (excluindo a si mesmo)
+  const otherFamilyMembers = roomUsers.filter(u => u.id !== profile.id);
+  const hasOtherFamilyInRoom = otherFamilyMembers.length > 0;
+
+  // Desliga/pausa automaticamente a música de fundo quando familiares entram na sala para não atrapalhar conversas
+  useEffect(() => {
+    musicSynthesizer.setFamilyInRoom(hasOtherFamilyInRoom);
+  }, [hasOtherFamilyInRoom]);
 
   // Execução contínua em segundo plano no celular para Netos (Web Worker)
   useBackgroundKeepalive();
@@ -423,6 +448,7 @@ export default function App() {
             onTogglePlay={() => setIsPlaying(!isPlaying)}
             onBackToHome={handleRequestExit}
             progressPercent={timerProgress}
+            isOnline={isOnline}
           />
 
           {/* Sub-barra: Indicador de Vagas do Pódio (1º, 2º e 3º Lugar) */}
@@ -471,6 +497,7 @@ export default function App() {
               onToggleMusic={handleToggleMusic}
               onOpenSettings={() => openModal('settings', setIsSettingsOpen)}
               onOpenFamilyGuide={() => openModal('guide', setIsFamilyGuideOpen)}
+              hasOtherFamilyInRoom={hasOtherFamilyInRoom}
             />
           </main>
         </div>

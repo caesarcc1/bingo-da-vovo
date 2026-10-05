@@ -10,8 +10,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { CountdownOverlay } from './components/CountdownOverlay';
 import { TopBallConveyor } from './components/TopBallConveyor';
 import { BingoCard } from './components/BingoCard';
-import { BingoClaimButton } from './components/BingoClaimButton';
-import { GameControls } from './components/GameControls';
+import { SideControls } from './components/SideControls';
 import { VictoryModal } from './components/VictoryModal';
 import { FamilyGuideModal } from './components/FamilyGuideModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -172,7 +171,7 @@ export default function App() {
         />
       )}
 
-      {/* 3. Tela da Partida (Estilo Play Store) */}
+      {/* 3. Tela da Partida (Estilo Play Store com Controles na Lateral) */}
       {currentScreen === 'game' && (
         <div className="h-full w-full flex flex-col justify-between overflow-hidden relative">
           {/* Overlay de Preparação e Contagem (3, 2, 1) */}
@@ -195,30 +194,25 @@ export default function App() {
             progressPercent={timerProgress}
           />
 
-          {/* Área Central: Cartela Proporcional e Elegante */}
-          <main className="flex-1 w-full max-w-4xl mx-auto flex flex-col items-center justify-center p-2 sm:p-4 min-h-0 overflow-y-auto">
-            <BingoCard
-              card={card}
-              markedCellIds={markedCellIds}
-              currentBall={currentBall}
-              onCellClick={toggleCell}
-              winState={winState}
-              vovoName={vovoName}
-            />
-          </main>
+          {/* Área Central: Cartela Completa 5x5 + Coluna da Lateral Direita */}
+          <main className="flex-1 w-full max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-6 p-2 sm:p-4 min-h-0 overflow-hidden">
+            {/* Cartela no Centro (100% Visível sem Cortes) */}
+            <div className="flex-1 h-full flex items-center justify-center min-h-0 w-full">
+              <BingoCard
+                card={card}
+                markedCellIds={markedCellIds}
+                currentBall={currentBall}
+                onCellClick={toggleCell}
+                winState={winState}
+                vovoName={vovoName}
+              />
+            </div>
 
-          {/* Rodapé: Botão de BINGO Brilhante + Controles de Apoio */}
-          <footer className="w-full max-w-2xl mx-auto p-2 sm:p-3 flex flex-col items-center gap-2 z-10">
-            <BingoClaimButton
+            {/* Controles na Lateral Direita: BINGO, Nova Cartela e Configurações */}
+            <SideControls
               isBingoReady={isBingoReadyToClaim}
               onClaimBingo={claimBingo}
               markedCount={markedCellIds.size + 1}
-            />
-
-            <GameControls
-              isPlaying={isPlaying}
-              onTogglePlay={() => setIsPlaying(!isPlaying)}
-              onDrawNext={drawNextBall}
               onResetGame={() => {
                 cancelSpeech();
                 resetGame();
@@ -226,13 +220,12 @@ export default function App() {
               }}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
-              deckRemaining={deck.length}
             />
-          </footer>
+          </main>
         </div>
       )}
 
-      {/* Modal de Confirmação para Voltar ao Menu (Proteção contra fechamento acidental) */}
+      {/* Modal de Confirmação para Voltar ao Menu */}
       {showExitConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-pop-in">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 text-center shadow-2xl border-4 border-amber-400">

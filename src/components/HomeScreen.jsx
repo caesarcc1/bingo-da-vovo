@@ -36,11 +36,15 @@ export function HomeScreen({
             className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-white transition-all shadow-md active:scale-95"
             title="Escolher quem está jogando e mudar foto"
           >
-            <div className="w-7 h-7 rounded-full overflow-hidden border-2 border-amber-400 bg-slate-700">
+            <div
+              className="w-7 h-7 rounded-full overflow-hidden border-2 border-amber-400 bg-slate-700"
+              style={{ width: '28px', height: '28px', flexShrink: 0 }}
+            >
               <img
                 src={getUserAvatar(profile)}
                 alt={profile?.name}
                 className="w-full h-full object-cover"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => { e.currentTarget.src = getUserAvatar(profile); }}
               />
             </div>
@@ -97,11 +101,15 @@ export function HomeScreen({
         {/* Foto Carinhosa do Jogador */}
         <div className="relative mb-4 flex items-center justify-center">
           <div className="relative group cursor-pointer" onClick={onOpenProfile}>
-            <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl ring-6 ring-amber-300/40 bg-slate-800">
+            <div
+              className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-amber-400 shadow-2xl ring-6 ring-amber-300/40 bg-slate-800"
+              style={{ width: '120px', height: '120px', maxWidth: '120px', maxHeight: '120px', flexShrink: 0 }}
+            >
               <img
                 src={getUserAvatar(profile)}
                 alt={profile?.name}
                 className="w-full h-full object-cover"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => { e.currentTarget.src = getUserAvatar(profile); }}
               />
             </div>

@@ -34,7 +34,7 @@ class MusicSynthesizer {
         this.audio = new Audio('/audio/bossa.mp3');
         this.audio.loop = true;
         this.audio.volume = this.baseVolume;
-        this.audio.preload = 'auto';
+        this.audio.preload = 'none';
 
         this.audio.addEventListener('error', () => {
           console.warn('[MusicSynthesizer] MP3 não carregou. Ativando sintetizador fallback.');

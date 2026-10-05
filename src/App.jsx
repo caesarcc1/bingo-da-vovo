@@ -34,10 +34,13 @@ export default function App() {
   const [isFamilyGuideOpen, setIsFamilyGuideOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  // Música e Som
-  const [musicPlaying, setMusicPlaying] = useState(false);
+  // Música e Som (Ligada por padrão para tocar ao iniciar)
+  const [musicPlaying, setMusicPlaying] = useState(() => {
+    const saved = localStorage.getItem('vovo_music_enabled');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [musicTheme, setMusicTheme] = useState('calmo');
-  const [musicVolume, setMusicVolume] = useState(0.25);
+  const [musicVolume, setMusicVolume] = useState(0.45);
 
   // Mantém tela do tablet sempre acesa
   const { isLocked: isScreenLocked } = useWakeLock();
@@ -116,12 +119,31 @@ export default function App() {
     musicSynthesizer.init();
   };
 
+  // Alternar Música de fundo
+  const handleToggleMusic = () => {
+    handleFirstInteraction();
+    if (musicPlaying) {
+      musicSynthesizer.stop();
+      setMusicPlaying(false);
+      localStorage.setItem('vovo_music_enabled', 'false');
+    } else {
+      musicSynthesizer.start();
+      setMusicPlaying(true);
+      localStorage.setItem('vovo_music_enabled', 'true');
+    }
+  };
+
   // Iniciar partida a partir da Tela Inicial
   const handleStartGameFromHome = () => {
     handleFirstInteraction();
     resetGame();
     setCurrentScreen('game');
     setIsPreparing(true);
+
+    // Inicia a música de fundo automaticamente no gesto de clique
+    if (musicPlaying) {
+      musicSynthesizer.start();
+    }
   };
 
   // Final da contagem 3-2-1 de preparação
@@ -129,6 +151,10 @@ export default function App() {
     setIsPreparing(false);
     drawNextBall(); // sorteia a primeira bola imediatamente
     setIsPlaying(true); // inicia o ciclo automático
+
+    if (musicPlaying) {
+      musicSynthesizer.start();
+    }
   };
 
   // Solicitar retorno ao menu inicial com proteção
@@ -208,7 +234,7 @@ export default function App() {
               />
             </div>
 
-            {/* Controles na Lateral Direita: BINGO, Nova Cartela e Configurações */}
+            {/* Controles na Lateral Direita: BINGO, Nova Cartela, Música e Configurações */}
             <SideControls
               isBingoReady={isBingoReadyToClaim}
               onClaimBingo={claimBingo}
@@ -220,6 +246,8 @@ export default function App() {
               }}
               onOpenSettings={() => setIsSettingsOpen(true)}
               onOpenFamilyGuide={() => setIsFamilyGuideOpen(true)}
+              musicPlaying={musicPlaying}
+              onToggleMusic={handleToggleMusic}
             />
           </main>
         </div>

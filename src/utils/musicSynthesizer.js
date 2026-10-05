@@ -6,7 +6,7 @@ class MusicSynthesizer {
     this.ctx = null;
     this.isPlaying = false;
     this.currentTheme = 'calmo'; // 'calmo' | 'alegre' | 'classico'
-    this.volume = 0.25; // volume confortável
+    this.volume = 0.45; // volume ideal para alto-falante de tablet
     this.masterGain = null;
     this.filter = null;
     this.intervalId = null;
@@ -14,16 +14,16 @@ class MusicSynthesizer {
     this.isDucked = false; // reduz volume quando a voz fala
   }
 
-  init() {
+  async init() {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
-        
-        // Filtro passa-baixa para dar um som aveludado e vintage, sem incomodar o ouvido
+
+        // Filtro passa-baixa aveludado (1800Hz) - quente, sem agudos estridentes e bem audível no tablet
         this.filter = this.ctx.createBiquadFilter();
         this.filter.type = 'lowpass';
-        this.filter.frequency.setValueAtTime(950, this.ctx.currentTime);
+        this.filter.frequency.setValueAtTime(1800, this.ctx.currentTime);
 
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
@@ -32,15 +32,18 @@ class MusicSynthesizer {
         this.masterGain.connect(this.ctx.destination);
       }
     }
+
     if (this.ctx && this.ctx.state === 'suspended') {
-      this.ctx.resume().catch(() => {});
+      try {
+        await this.ctx.resume();
+      } catch (e) {}
     }
   }
 
   setVolume(val) {
     this.volume = Math.max(0, Math.min(1, val));
     if (this.masterGain && this.ctx) {
-      const target = this.isDucked ? this.volume * 0.35 : this.volume;
+      const target = this.isDucked ? this.volume * 0.3 : this.volume;
       this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.1);
     }
   }
@@ -49,28 +52,32 @@ class MusicSynthesizer {
   duck(enable) {
     this.isDucked = enable;
     if (this.masterGain && this.ctx) {
-      const target = enable ? this.volume * 0.35 : this.volume;
-      this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.2);
+      const target = enable ? this.volume * 0.3 : this.volume;
+      this.masterGain.gain.setTargetAtTime(target, this.ctx.currentTime, 0.15);
     }
   }
 
   setTheme(theme) {
     this.currentTheme = theme;
     this.step = 0;
+    if (this.isPlaying) {
+      this.stop();
+      this.start();
+    }
   }
 
-  playNote(freq, time, duration, gainAmount = 0.15) {
+  playNote(freq, time, duration, gainAmount = 0.28) {
     if (!this.ctx || !this.isPlaying) return;
     try {
       const osc = this.ctx.createOscillator();
       const noteGain = this.ctx.createGain();
 
-      osc.type = 'triangle'; // timbre doce e macio
+      osc.type = 'triangle'; // timbre doce, redondo e acolhedor
       osc.frequency.setValueAtTime(freq, time);
 
-      // Envelope suave (ataque macio e release progressivo)
+      // Envelope macio
       noteGain.gain.setValueAtTime(0.001, time);
-      noteGain.gain.linearRampToValueAtTime(gainAmount, time + 0.06);
+      noteGain.gain.linearRampToValueAtTime(gainAmount, time + 0.05);
       noteGain.gain.exponentialRampToValueAtTime(0.001, time + duration);
 
       osc.connect(noteGain);
@@ -98,10 +105,10 @@ class MusicSynthesizer {
       const noteIndex = this.step % 4;
 
       // Arpejo delicado e aconchegante
-      this.playNote(chord[noteIndex], now, 0.7, 0.12);
+      this.playNote(chord[noteIndex], now, 0.75, 0.28);
       if (noteIndex === 0) {
         // Baixo acústico suave
-        this.playNote(chord[0] / 2, now, 0.9, 0.18);
+        this.playNote(chord[0] / 2, now, 0.95, 0.35);
       }
     } else if (this.currentTheme === 'alegre') {
       // Melodia animada e festiva em tom maior
@@ -116,9 +123,9 @@ class MusicSynthesizer {
         { f: 293.66, b: null }    // Ré
       ];
       const cur = melody[this.step % melody.length];
-      this.playNote(cur.f, now, 0.35, 0.14);
+      this.playNote(cur.f, now, 0.4, 0.3);
       if (cur.b) {
-        this.playNote(cur.b, now, 0.45, 0.16);
+        this.playNote(cur.b, now, 0.5, 0.32);
       }
     } else if (this.currentTheme === 'classico') {
       // Valsinha clássica (1 - 2 - 3)
@@ -133,22 +140,25 @@ class MusicSynthesizer {
 
       if (beat === 0) {
         // Tempo 1: Baixo
-        this.playNote(w.bass, now, 0.55, 0.2);
+        this.playNote(w.bass, now, 0.65, 0.36);
       } else {
         // Tempos 2 e 3: Acordes suaves
-        w.chord.forEach(f => this.playNote(f, now, 0.4, 0.08));
+        w.chord.forEach(f => this.playNote(f, now, 0.45, 0.22));
       }
     }
 
     this.step++;
   }
 
-  start() {
-    this.init();
+  async start() {
+    await this.init();
     if (this.isPlaying) return;
     this.isPlaying = true;
 
-    // Ritmo tranquilo (a cada 450ms no calmo/alegre, 500ms na valsa)
+    // Dispara a primeira nota imediatamente
+    this.tick();
+
+    // Ritmo tranquilo
     const intervalTime = this.currentTheme === 'classico' ? 520 : 440;
     this.intervalId = setInterval(() => this.tick(), intervalTime);
   }

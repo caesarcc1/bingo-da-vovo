@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { RotateCcw, Settings, ShieldAlert, Maximize, Minimize } from 'lucide-react';
+import { RotateCcw, Settings, ShieldAlert, Maximize, Minimize, Music } from 'lucide-react';
 import { BingoClaimButton } from './BingoClaimButton';
 
 export function SideControls({
@@ -8,7 +8,9 @@ export function SideControls({
   markedCount,
   onResetGame,
   onOpenSettings,
-  onOpenFamilyGuide
+  onOpenFamilyGuide,
+  musicPlaying,
+  onToggleMusic
 }) {
   const [resetHoldProgress, setResetHoldProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
@@ -56,7 +58,7 @@ export function SideControls({
   };
 
   return (
-    <aside className="w-full md:w-56 lg:w-64 flex flex-col justify-center gap-3 sm:gap-4 select-none flex-shrink-0 z-10">
+    <aside className="w-full md:w-56 lg:w-64 flex flex-col justify-center gap-2.5 sm:gap-3 select-none flex-shrink-0 z-10">
       {/* Toast de Aviso da Trava */}
       {showToast && (
         <div className="bg-amber-600 text-white px-3 py-2 rounded-2xl shadow-xl text-center text-xs font-black animate-bounce">
@@ -81,7 +83,7 @@ export function SideControls({
         onTouchStart={handleHoldStart}
         onTouchEnd={handleHoldEnd}
         type="button"
-        className="relative overflow-hidden w-full flex items-center justify-center gap-2 py-3 sm:py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-slate-800 bg-slate-200 hover:bg-slate-300 active:scale-95 shadow-md border-b-4 border-slate-400 select-none transition-all"
+        className="relative overflow-hidden w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-black text-sm sm:text-base text-slate-800 bg-slate-200 hover:bg-slate-300 active:scale-95 shadow-md border-b-4 border-slate-400 select-none transition-all"
         title="Segure por 3 segundos para começar uma nova cartela"
       >
         {resetHoldProgress > 0 && (
@@ -98,7 +100,24 @@ export function SideControls({
         </span>
       </button>
 
-      {/* 3. Painel de Ações Secundárias na Lateral */}
+      {/* 3. Botão Rápido de Música (Acesso Direto em 1 Clique) */}
+      <button
+        onClick={onToggleMusic}
+        type="button"
+        className={`
+          w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl border text-xs sm:text-sm font-bold shadow active:scale-95 transition-all
+          ${musicPlaying
+            ? 'bg-rose-950/70 border-rose-500/80 text-rose-200 hover:bg-rose-900/80'
+            : 'bg-slate-800 border-slate-600 text-slate-400 hover:bg-slate-700'
+          }
+        `}
+        title="Ligar ou pausar a música de fundo"
+      >
+        <Music className={`w-4 h-4 ${musicPlaying ? 'text-rose-400 animate-pulse' : 'text-slate-400'}`} />
+        <span>{musicPlaying ? 'Música: Tocando' : 'Música: Pausada'}</span>
+      </button>
+
+      {/* 4. Painel de Ações Secundárias na Lateral */}
       <div className="grid grid-cols-2 md:grid-cols-1 gap-2 w-full">
         {/* Opções e Sons */}
         <button
@@ -107,7 +126,7 @@ export function SideControls({
           className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs sm:text-sm shadow active:scale-95 transition-all"
         >
           <Settings className="w-4 h-4 text-amber-400" />
-          <span>Opções & Som</span>
+          <span>Opções & Temas</span>
         </button>
 
         {/* Dicas da Família / Blindagem */}

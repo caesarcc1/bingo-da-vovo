@@ -1,12 +1,17 @@
-import React, { useState, useRef } from 'react';
-import { RotateCcw, LogOut, Music, Settings, ShieldAlert, Maximize } from 'lucide-react';
+import React from 'react';
+import { LogOut, Music, Sparkles } from 'lucide-react';
 import { BingoClaimButton } from './BingoClaimButton';
+import { DrawnBallsList } from './DrawnBallsList';
+import { MilestoneBar } from './MilestoneBar';
 
 export function SideControls({
   isBingoReady,
   onClaimBingo,
   markedCount,
-  onResetGame,
+  drawnBalls = [],
+  milestones,
+  showNewGame = false,
+  onNewGame,
   onRequestExit,
   musicPlaying,
   onToggleMusic,
@@ -14,91 +19,48 @@ export function SideControls({
   onOpenFamilyGuide,
   hasOtherFamilyInRoom = false
 }) {
-  const [resetHoldProgress, setResetHoldProgress] = useState(0);
-  const [showToast, setShowToast] = useState(false);
-  const holdIntervalRef = useRef(null);
-  const holdStartTimeRef = useRef(null);
-
-  // Manipulador da Trava da Vovó (segurar 2.5s para reiniciar)
-  const handleHoldStart = () => {
-    holdStartTimeRef.current = Date.now();
-    const duration = 2500;
-
-    holdIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - holdStartTimeRef.current;
-      const progress = Math.min(100, Math.round((elapsed / duration) * 100));
-      setResetHoldProgress(progress);
-
-      if (progress >= 100) {
-        clearInterval(holdIntervalRef.current);
-        holdIntervalRef.current = null;
-        setResetHoldProgress(0);
-        onResetGame();
-      }
-    }, 50);
-  };
-
-  const handleHoldEnd = () => {
-    if (holdIntervalRef.current) {
-      clearInterval(holdIntervalRef.current);
-      holdIntervalRef.current = null;
-      if (resetHoldProgress < 95 && resetHoldProgress > 0) {
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-      }
-      setResetHoldProgress(0);
-    }
-  };
-
   return (
-    <aside className="w-full md:w-32 lg:w-38 flex flex-col justify-center gap-1.5 select-none flex-shrink-0 z-10">
-      {/* Toast de Aviso da Trava */}
-      {showToast && (
-        <div className="bg-amber-600 text-white px-2 py-1 rounded-xl shadow-xl text-center text-xs font-black animate-bounce">
-          🔒 Segure por 3 segundos para reiniciar!
-        </div>
+    <aside className="w-full md:w-36 lg:w-40 h-full max-h-full min-h-0 flex flex-col gap-1.5 select-none flex-shrink-0 z-10">
+      {/* 1. Barra de prêmios (marcos de números marcados) */}
+      {milestones && (
+        <MilestoneBar
+          markedCount={markedCount}
+          next={milestones.next}
+          lastReached={milestones.lastReached}
+        />
       )}
 
-      {/* 1. Botão de BINGO Brilhante da Play Store */}
-      <div className="w-full flex justify-center">
-        <BingoClaimButton
-          isBingoReady={isBingoReady}
-          onClaimBingo={onClaimBingo}
-          markedCount={markedCount}
-        />
-      </div>
+      {/* 2. Todas as bolas já sorteadas (mais recente no topo) */}
+      <DrawnBallsList drawnBalls={drawnBalls} />
 
-      {/* 2. Botão de Nova Cartela com Trava da Vovó */}
-      <button
-        onMouseDown={handleHoldStart}
-        onMouseUp={handleHoldEnd}
-        onMouseLeave={handleHoldEnd}
-        onTouchStart={handleHoldStart}
-        onTouchEnd={handleHoldEnd}
-        type="button"
-        className="relative overflow-hidden w-full flex items-center justify-center gap-1.5 py-1.5 sm:py-2 px-2 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-sm text-slate-800 bg-amber-100 hover:bg-amber-200 active:scale-95 shadow-md border-b-2 sm:border-b-3 border-amber-300 select-none transition-all"
-        title="Segure por 3 segundos para começar uma nova cartela"
-      >
-        {resetHoldProgress > 0 && (
-          <div
-            className="absolute left-0 top-0 bottom-0 bg-rose-500/40 transition-all duration-75"
-            style={{ width: `${resetHoldProgress}%` }}
-          />
-        )}
-        <RotateCcw className="w-3.5 h-3.5 text-slate-700 relative z-10 flex-shrink-0" />
-        <span className="relative z-10 truncate">
-          {resetHoldProgress > 0
-            ? `${Math.round(resetHoldProgress)}%`
-            : 'Nova Cartela'}
-        </span>
-      </button>
+      {/* 3. Botão NOVA PARTIDA (após fechar a janela de fim de jogo) ou BINGO (quando pronto) */}
+      {showNewGame ? (
+        <button
+          onClick={onNewGame}
+          type="button"
+          className="w-full flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl font-black text-sm text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-xl border-b-2 border-emerald-800 active:scale-95 transition-all flex-shrink-0 animate-pulse"
+        >
+          <Sparkles className="w-4 h-4 flex-shrink-0" />
+          <span>Nova Partida</span>
+        </button>
+      ) : (
+        isBingoReady && (
+          <div className="w-full flex justify-center flex-shrink-0">
+            <BingoClaimButton
+              isBingoReady={isBingoReady}
+              onClaimBingo={onClaimBingo}
+              markedCount={markedCount}
+            />
+          </div>
+        )
+      )}
 
-      {/* 3. Botão Rápido de Música */}
+      {/* 4. Botão Rápido de Música */}
       <button
         onClick={onToggleMusic}
         type="button"
         className={`
-          w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl sm:rounded-2xl border text-xs font-bold shadow active:scale-95 transition-all
+          w-full flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl border text-xs font-bold shadow active:scale-95 transition-all flex-shrink-0
           ${hasOtherFamilyInRoom
             ? 'bg-slate-850 border-slate-700/60 text-slate-400'
             : (musicPlaying
@@ -113,11 +75,11 @@ export function SideControls({
         <span className="truncate">{hasOtherFamilyInRoom ? 'Música: Silenciosa' : (musicPlaying ? 'Música: On' : 'Música: Off')}</span>
       </button>
 
-      {/* 4. GRANDE BOTÃO SAIR (Pausa o jogo e pede confirmação) */}
+      {/* 5. GRANDE BOTÃO SAIR (Pausa o jogo e pede confirmação) */}
       <button
         onClick={onRequestExit}
         type="button"
-        className="w-full flex items-center justify-center gap-1.5 py-2 sm:py-2.5 px-2 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-lg border-b-2 sm:border-b-3 border-rose-800 select-none transition-all"
+        className="w-full flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl font-black text-xs sm:text-sm text-white bg-rose-600 hover:bg-rose-700 active:scale-95 shadow-lg border-b-2 border-rose-800 select-none transition-all flex-shrink-0"
         title="Sair da partida"
       >
         <LogOut className="w-3.5 h-3.5 flex-shrink-0" />
@@ -125,7 +87,7 @@ export function SideControls({
       </button>
 
       {/* Em telas estreitas/verticais onde o dock da esquerda fica oculto */}
-      <div className="flex md:hidden items-center justify-center gap-2 w-full pt-1">
+      <div className="flex md:hidden items-center justify-center gap-2 w-full pt-1 flex-shrink-0">
         <button
           onClick={onOpenSettings}
           type="button"

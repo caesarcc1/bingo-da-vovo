@@ -1,7 +1,7 @@
 // Service Worker do Bingo da Vovó (PWA Offline & Alta Resiliência)
 // Permite que o tablet da Vovó jogue 100% sem conexão à internet!
 
-const CACHE_NAME = 'bingo-da-vovo-v5';
+const CACHE_NAME = 'bingo-da-vovo-v6';
 
 const BALL_AUDIO_URLS = Array.from({ length: 75 }, (_, i) => `/audio/balls/${i + 1}.mp3`);
 

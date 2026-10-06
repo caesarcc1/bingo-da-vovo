@@ -27,6 +27,8 @@ import { FamilyMembersList } from './components/FamilyMembersList';
 import { VoiceChatBar } from './components/VoiceChatBar';
 import { MobileNetoLayout } from './components/MobileNetoLayout';
 import { FloatingPipWindow } from './components/FloatingPipWindow';
+import { MilestoneToast } from './components/MilestoneToast';
+import { useMilestones } from './hooks/useMilestones';
 
 export default function App() {
   // Telas da aplicação: 'splash' | 'home' | 'game'
@@ -42,6 +44,7 @@ export default function App() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showBingoCelebration, setShowBingoCelebration] = useState(false);
+  const [gameOverDismissed, setGameOverDismissed] = useState(false);
   const activeModalRef = useRef(null);
 
   // Música e Som (Ligada por padrão)
@@ -200,6 +203,34 @@ export default function App() {
     setAutoBingo(profile.autoBingo);
   }, [profile.autoBingo, setAutoBingo]);
 
+  // Prêmios por quantidade de números marcados (a casa LIVRE conta)
+  const markedCount = markedCellIds.size + 1;
+  const milestones = useMilestones(markedCount);
+
+  // Quando uma nova partida começa, a janela de encerramento volta a poder abrir
+  useEffect(() => {
+    if (!isGameOver) setGameOverDismissed(false);
+  }, [isGameOver]);
+
+  // Fluxo único de "Nova Partida" (janelas de fim de jogo e botão lateral)
+  const handleNewGame = () => {
+    cancelSpeech();
+    resetGame();
+    if (isVovo) emitStartGame();
+    setIsPreparing(true);
+  };
+
+  // Partida terminou e as janelas já foram fechadas: mostra botão grande "Nova Partida"
+  const showNewGameButton =
+    (hasWonThisGame && !showBingoCelebration) || (isGameOver && gameOverDismissed);
+
+  // Indica se a partida terminou (evita retomar o sorteio ao cancelar a saída)
+  const gameEndedRef = useRef(false);
+  useEffect(() => {
+    gameEndedRef.current = hasWonThisGame || isGameOver;
+  }, [hasWonThisGame, isGameOver]);
+
+
   // Funções para gerenciar abertura e fechamento de modais com histórico do Android
   const openModal = (modalName, setOpenFn) => {
     activeModalRef.current = modalName;
@@ -244,7 +275,7 @@ export default function App() {
 
       if (modal === 'exit') {
         setShowExitConfirm(false);
-        setIsPlaying(true);
+        if (!gameEndedRef.current) setIsPlaying(true);
         activeModalRef.current = null;
         window.history.pushState(null, '', window.location.href);
         return;
@@ -252,6 +283,13 @@ export default function App() {
 
       if (modal === 'victory') {
         setShowBingoCelebration(false);
+        activeModalRef.current = null;
+        window.history.pushState(null, '', window.location.href);
+        return;
+      }
+
+      if (modal === 'gameover') {
+        setGameOverDismissed(true);
         activeModalRef.current = null;
         window.history.pushState(null, '', window.location.href);
         return;
@@ -353,7 +391,7 @@ export default function App() {
   // Cancelar saída e retornar ao jogo
   const handleCancelExit = () => {
     closeModal('exit', setShowExitConfirm);
-    setIsPlaying(true);
+    if (!gameEndedRef.current) setIsPlaying(true);
   };
 
   return (
@@ -481,17 +519,15 @@ export default function App() {
               />
             </div>
 
-            {/* 3. Lateral Direita: BINGO, Nova Cartela, Música e Botão Grande SAIR */}
+            {/* 3. Lateral Direita: Prêmios, bolas sorteadas, BINGO/Nova Partida, Música e SAIR */}
             <SideControls
               isBingoReady={isBingoReadyToClaim}
               onClaimBingo={claimBingo}
-              markedCount={markedCellIds.size + 1}
-              onResetGame={() => {
-                cancelSpeech();
-                resetGame();
-                emitStartGame();
-                setIsPreparing(true);
-              }}
+              markedCount={markedCount}
+              drawnBalls={drawnBalls}
+              milestones={milestones}
+              showNewGame={showNewGameButton}
+              onNewGame={handleNewGame}
               onRequestExit={handleRequestExit}
               musicPlaying={musicPlaying}
               onToggleMusic={handleToggleMusic}
@@ -537,12 +573,7 @@ export default function App() {
       <VictoryModal
         isOpen={showBingoCelebration}
         onClose={() => closeModal('victory', setShowBingoCelebration)}
-        onNewGame={() => {
-          cancelSpeech();
-          resetGame();
-          if (isVovo) emitStartGame();
-          setIsPreparing(true);
-        }}
+        onNewGame={handleNewGame}
         vovoName={profile.name}
         playerPhoto={getUserAvatar(profile)}
         winPlace={vovoWinPlace || 1}
@@ -551,16 +582,16 @@ export default function App() {
 
       {/* Modal Carinhoso de Encerramento (Quando 3 virtuais ganham antes) */}
       <GameFinishedModal
-        isOpen={isGameOver}
+        isOpen={isGameOver && !gameOverDismissed}
         podiumWinners={podiumWinners}
-        onNewGame={() => {
-          cancelSpeech();
-          resetGame();
-          if (isVovo) emitStartGame();
-          setIsPreparing(true);
-        }}
+        onNewGame={handleNewGame}
         vovoName={profile.name}
       />
+
+      {/* Aviso flutuante de prêmio (não bloqueia o jogo) */}
+      {currentScreen === 'game' && isVovo && (
+        <MilestoneToast milestone={milestones.justUnlocked} />
+      )}
 
       {/* Modal de Dicas para Fixar/Blindar no Tablet */}
       <FamilyGuideModal

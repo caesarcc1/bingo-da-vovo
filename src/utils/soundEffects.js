@@ -82,6 +82,33 @@ class SoundFX {
   }
 
   /**
+   * Sininho de prêmio ao atingir um marco de números marcados
+   */
+  playMilestone() {
+    if (this.muted) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const notes = [659.25, 783.99, 987.77, 1318.51];
+      let t = this.ctx.currentTime;
+      notes.forEach((f) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, t);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.01, t + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.25);
+        t += 0.11;
+      });
+    } catch (e) {}
+  }
+
+  /**
    * Sino suave quando uma nova pedra é sorteada do globo
    */
   playBallDrawn() {

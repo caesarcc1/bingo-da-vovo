@@ -181,16 +181,12 @@ export function useBingoGame({
     if (hasWonThisGame || cell.isFree) return;
     const isDrawn = drawnBalls.includes(cell.number);
 
+    // Só marca números já sorteados; depois de marcado, nunca mais desmarca
     setMarkedCellIds(prev => {
+      if (prev.has(cell.id) || !isDrawn) return prev;
       const next = new Set(prev);
-      if (next.has(cell.id)) {
-        next.delete(cell.id);
-        soundFX.playUnmark();
-      } else {
-        if (!isDrawn) return prev;
-        next.add(cell.id);
-        soundFX.playPop();
-      }
+      next.add(cell.id);
+      soundFX.playPop();
       return next;
     });
   }, [hasWonThisGame, drawnBalls]);

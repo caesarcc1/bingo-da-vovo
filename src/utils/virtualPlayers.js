@@ -76,9 +76,11 @@ export const VIRTUAL_PLAYERS = [
 
 /**
  * Inicializa os competidores da rodada com cartelas próprias
+ * Suporta quantidade customizável (padrão 5)
  */
-export function initializeVirtualPlayers() {
-  return VIRTUAL_PLAYERS.map(player => {
+export function initializeVirtualPlayers(count = 5) {
+  const selected = VIRTUAL_PLAYERS.slice(0, Math.max(1, Math.min(count, VIRTUAL_PLAYERS.length)));
+  return selected.map(player => {
     return {
       ...player,
       card: generateBingoCard(),

@@ -90,10 +90,10 @@ export function BingoCard({
                 `}
                 aria-label={`Número ${cell.number}, coluna ${cell.letter}${isMarked ? ', marcado' : ''}`}
               >
-                {/* Número da Célula */}
+                {/* Número da Célula Ampliado */}
                 <span
                   className={`
-                    font-black tracking-tight select-none text-xl sm:text-2xl md:text-3xl lg:text-4xl leading-none
+                    font-black tracking-tight select-none text-2xl sm:text-3xl md:text-4xl lg:text-5xl leading-none
                     ${isMarked ? 'text-slate-400' : 'text-slate-900'}
                   `}
                 >
@@ -114,7 +114,7 @@ export function BingoCard({
                       }}
                     >
                       <div className="w-2 h-0.5 bg-white/40 rounded-full absolute top-1 left-1.5 transform -rotate-12" />
-                      <span className="text-white font-black text-[10px] sm:text-xs md:text-sm lg:text-base drop-shadow leading-none">
+                      <span className="text-white font-black text-xs sm:text-sm md:text-base lg:text-lg drop-shadow leading-none">
                         {cell.number}
                       </span>
                     </div>

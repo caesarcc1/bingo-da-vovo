@@ -9,7 +9,8 @@ export function useBingoGame({
   onVirtualWin,
   onGameOver,
   playerName = 'Vovó',
-  isHost = true
+  isHost = true,
+  virtualPlayerCount = 5
 }) {
   const [card, setCard] = useState(() => generateBingoCard());
   const [deck, setDeck] = useState(() => generateDrawDeck());
@@ -24,7 +25,9 @@ export function useBingoGame({
   const [hasWonThisGame, setHasWonThisGame] = useState(false); // trava de vitória até o reset
 
   // Jogadores Virtuais & Pódio (3 Ganhadores)
-  const [virtualPlayers, setVirtualPlayers] = useState(() => initializeVirtualPlayers());
+  const virtualPlayerCountRef = useRef(virtualPlayerCount);
+  virtualPlayerCountRef.current = virtualPlayerCount;
+  const [virtualPlayers, setVirtualPlayers] = useState(() => initializeVirtualPlayers(virtualPlayerCount));
   const [podiumWinners, setPodiumWinners] = useState([]); // array de { id, name, winPlace, winPattern }
   const [latestVirtualWinner, setLatestVirtualWinner] = useState(null);
   const [isGameOver, setIsGameOver] = useState(false);
@@ -288,7 +291,7 @@ export function useBingoGame({
     setIsGameOver(false);
     setLatestVirtualWinner(null);
     setPodiumWinners([]);
-    setVirtualPlayers(initializeVirtualPlayers());
+    setVirtualPlayers(initializeVirtualPlayers(virtualPlayerCountRef.current));
     setCard(generateBingoCard());
     setDeck(generateDrawDeck());
     setDrawnBalls([]);
@@ -325,6 +328,7 @@ export function useBingoGame({
     hasWonThisGame,
     setHasWonThisGame,
     claimBingo,
+    virtualPlayers,
     podiumWinners,
     latestVirtualWinner,
     setLatestVirtualWinner,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Volume2, VolumeX, Music, Mic, Zap, Clock, User } from 'lucide-react';
+import { X, Volume2, VolumeX, Music, Mic, Zap, Clock, User, Users } from 'lucide-react';
 import { musicSynthesizer } from '../utils/musicSynthesizer';
 
 export function SettingsModal({
@@ -18,7 +18,9 @@ export function SettingsModal({
   musicPlaying,
   setMusicPlaying,
   musicVolume,
-  setMusicVolume
+  setMusicVolume,
+  virtualPlayerCount = 5,
+  setVirtualPlayerCount
 }) {
   if (!isOpen) return null;
 
@@ -242,6 +244,46 @@ export function SettingsModal({
             >
               {autoMark ? 'Ligada' : 'Desligada'}
             </button>
+          </div>
+
+          {/* Quantidade de Adversários Virtuais (Dificuldade) */}
+          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-purple-700 flex-shrink-0">
+                <Users className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="font-extrabold text-sm sm:text-base text-slate-900">
+                  Adversários Virtuais (Dificuldade)
+                </p>
+                <p className="text-xs text-slate-500">
+                  Menos jogadores facilitam o jogo e dão mais chances de bater Bingo!
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {[
+                { count: 3, label: '3 Jogadores', desc: 'Mais Fácil' },
+                { count: 5, label: '5 Jogadores', desc: 'Padrão' },
+                { count: 8, label: '8 Jogadores', desc: 'Competitivo' }
+              ].map((opt) => (
+                <button
+                  key={opt.count}
+                  onClick={() => setVirtualPlayerCount && setVirtualPlayerCount(opt.count)}
+                  type="button"
+                  className={`
+                    py-2 px-1 rounded-xl border-2 transition-all flex flex-col items-center justify-center
+                    ${virtualPlayerCount === opt.count
+                      ? 'bg-purple-100 border-purple-600 text-purple-800 shadow-sm'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                    }
+                  `}
+                >
+                  <span className="font-black text-xs sm:text-sm">{opt.label}</span>
+                  <span className="text-[10px] font-semibold opacity-75">{opt.desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 

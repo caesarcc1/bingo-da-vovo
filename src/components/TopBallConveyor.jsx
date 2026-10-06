@@ -19,8 +19,8 @@ export function TopBallConveyor({
   // Bolas anteriores (últimas 4)
   const previousBalls = drawnBalls.slice(0, -1).slice(-4).reverse();
 
-  // Cálculo do anel circular de contagem da próxima bola (compactado para telas de tablet)
-  const radius = 30;
+  // Cálculo do anel circular de contagem da próxima bola (ampliado para destaque visual)
+  const radius = 34;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
@@ -107,13 +107,13 @@ export function TopBallConveyor({
           <div className="relative flex items-center justify-center">
             {/* SVG do anel de progresso da próxima pedra */}
             {isPlaying && (
-              <svg className="absolute w-14 h-14 sm:w-16 sm:h-16 -rotate-90 pointer-events-none">
+              <svg className="absolute w-16 h-16 sm:w-20 sm:h-20 -rotate-90 pointer-events-none">
                 <circle
                   cx="50%"
                   cy="50%"
                   r={radius}
                   stroke="#334155"
-                  strokeWidth="3.5"
+                  strokeWidth="4"
                   fill="transparent"
                 />
                 <circle
@@ -121,7 +121,7 @@ export function TopBallConveyor({
                   cy="50%"
                   r={radius}
                   stroke="#fbbf24"
-                  strokeWidth="3.5"
+                  strokeWidth="4"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
@@ -131,28 +131,28 @@ export function TopBallConveyor({
               </svg>
             )}
 
-            {/* Bola Atual */}
+            {/* Bola Atual Ampliada */}
             {currentBall ? (
               <div
                 className={`
-                  w-12 h-12 sm:w-14 sm:h-14 rounded-full flex flex-col items-center justify-center shadow-xl relative border-2 border-white
+                  w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full flex flex-col items-center justify-center shadow-xl relative border-2 border-white
                   ${currentStyle.bg} animate-pop-in
                 `}
                 style={{
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.4)'
+                  boxShadow: '0 4px 14px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.45)'
                 }}
               >
-                <span className="text-white font-black text-[9px] sm:text-[10px] drop-shadow leading-none">
+                <span className="text-white font-black text-[10px] sm:text-xs md:text-sm drop-shadow leading-none">
                   {currentLetter}
                 </span>
-                <div className="bg-white rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center shadow-inner mt-0.5">
-                  <span className="text-slate-950 font-black text-xs sm:text-sm">
+                <div className="bg-white rounded-full w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 flex items-center justify-center shadow-inner mt-0.5">
+                  <span className="text-slate-950 font-black text-sm sm:text-base md:text-lg">
                     {currentBall}
                   </span>
                 </div>
               </div>
             ) : (
-              <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-500 font-black text-base">
+              <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 rounded-full bg-slate-800 border-2 border-slate-600 flex items-center justify-center text-slate-500 font-black text-lg sm:text-xl">
                 ?
               </div>
             )}

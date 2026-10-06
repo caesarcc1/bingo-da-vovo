@@ -84,6 +84,17 @@ export default function App() {
     cancelSpeech
   } = useVoiceAnnouncer();
 
+  // Quantidade de adversários fictícios na partida (3, 5 ou 8 - padrão 5)
+  const [virtualPlayerCount, setVirtualPlayerCount] = useState(() => {
+    const saved = localStorage.getItem('vovo_virtual_player_count');
+    return saved ? parseInt(saved, 10) : 5;
+  });
+
+  const handleSetVirtualPlayerCount = (count) => {
+    setVirtualPlayerCount(count);
+    localStorage.setItem('vovo_virtual_player_count', count.toString());
+  };
+
   // Jogo do Bingo com Pódio e Jogadores Virtuais
   const {
     card,
@@ -117,6 +128,7 @@ export default function App() {
   } = useBingoGame({
     playerName: profile.name,
     isHost: isVovo,
+    virtualPlayerCount,
     onBallDrawn: (num) => {
       speakNumber(num);
       emitBallDrawn(num);
@@ -321,12 +333,15 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [currentScreen, drawnBalls.length]);
 
-  // Primeiro clique na tela inicializa os canais de áudio
+  // Primeiro clique na tela inicializa os canais de áudio e inicia música suave
   const handleFirstInteraction = () => {
     soundFX.init();
     musicSynthesizer.init();
     if (voiceProps?.unlockAudio) {
       voiceProps.unlockAudio();
+    }
+    if (musicPlaying && !musicSynthesizer.isPlaying) {
+      musicSynthesizer.start();
     }
   };
 
@@ -421,6 +436,10 @@ export default function App() {
           onOpenProfile={() => openModal('profile', setIsProfileOpen)}
           roomUsers={roomUsers}
           isConnected={isConnected}
+          musicPlaying={musicPlaying}
+          onToggleMusic={handleToggleMusic}
+          virtualPlayerCount={virtualPlayerCount}
+          onChangeVirtualPlayerCount={handleSetVirtualPlayerCount}
         />
       )}
 
@@ -629,6 +648,8 @@ export default function App() {
         setMusicPlaying={setMusicPlaying}
         musicVolume={musicVolume}
         setMusicVolume={setMusicVolume}
+        virtualPlayerCount={virtualPlayerCount}
+        setVirtualPlayerCount={handleSetVirtualPlayerCount}
       />
     </div>
   );

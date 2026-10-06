@@ -2,13 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { getNarrationPhrase } from '../utils/numberWords';
 import { musicSynthesizer } from '../utils/musicSynthesizer';
 
-export function useVoiceAnnouncer() {
+export function useVoiceAnnouncer(narratorVoice = 'vovo') {
   const [voices, setVoices] = useState([]);
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceMuted, setVoiceMuted] = useState(false);
   const lastAnnouncedNum = useRef(null);
   const currentAudioRef = useRef(null);
+  const narratorVoiceRef = useRef(narratorVoice);
+  narratorVoiceRef.current = narratorVoice;
 
   // Carregar vozes do navegador apenas para caso de fallback
   useEffect(() => {
@@ -105,8 +107,14 @@ export function useVoiceAnnouncer() {
     musicSynthesizer.duck(true);
     setIsSpeaking(true);
 
-    // 3. Toca o arquivo MP3 gravado em estúdio com voz brasileira (Francisca pt-BR)
-    const audioUrl = `/audio/balls/${num}.mp3`;
+    // 3. Toca o arquivo MP3 gravado para o narrador escolhido
+    const currentNarrator = narratorVoiceRef.current;
+    let audioUrl = `/audio/balls/${num}.mp3`;
+    if (currentNarrator === 'silvio') {
+      audioUrl = `/audio/silvio/${num}.mp3`;
+    } else if (currentNarrator === 'quermesse') {
+      audioUrl = `/audio/quermesse/${num}.mp3`;
+    }
     const audio = new Audio(audioUrl);
     currentAudioRef.current = audio;
 

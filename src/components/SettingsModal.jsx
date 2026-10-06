@@ -13,7 +13,9 @@ export function SettingsModal({
   setAutoMark,
   voiceMuted,
   setVoiceMuted,
-  musicTheme,
+  narratorVoice = 'vovo',
+  setNarratorVoice,
+  musicTheme = 'bossa',
   setMusicTheme,
   musicPlaying,
   setMusicPlaying,
@@ -38,6 +40,17 @@ export function SettingsModal({
   const handleThemeChange = (theme) => {
     setMusicTheme(theme);
     musicSynthesizer.setTheme(theme);
+  };
+
+  const handleNarratorChange = (id) => {
+    if (setNarratorVoice) setNarratorVoice(id);
+    if (id === 'silvio') {
+      handleThemeChange('show_do_milhao');
+    } else if (id === 'quermesse') {
+      handleThemeChange('sao_joao');
+    } else {
+      handleThemeChange('bossa');
+    }
   };
 
   return (
@@ -73,42 +86,90 @@ export function SettingsModal({
             />
           </div>
 
-          {/* Narração em Voz Alta */}
-          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-indigo-100 flex items-center justify-center text-indigo-700">
-                <Mic className="w-5 h-5" />
+          {/* Escolha do Narrador do Bingo */}
+          <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700 flex-shrink-0">
+                  <Mic className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-extrabold text-sm sm:text-base text-slate-900">
+                    Voz do Narrador do Bingo
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Quem vai cantar as pedras no sorteio
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-extrabold text-sm sm:text-base text-slate-900">
-                  Narração da Pedra Cantada
-                </p>
-                <p className="text-xs text-slate-500">
-                  Fala a letra, número e dígitos em português
-                </p>
-              </div>
+
+              <button
+                onClick={() => setVoiceMuted(!voiceMuted)}
+                type="button"
+                className={`
+                  px-3 py-1.5 rounded-xl font-black text-xs transition-all
+                  ${!voiceMuted
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-200 text-slate-600'
+                  }
+                `}
+              >
+                {!voiceMuted ? 'Voz Ligada' : 'Muda'}
+              </button>
             </div>
 
-            <button
-              onClick={() => setVoiceMuted(!voiceMuted)}
-              type="button"
-              className={`
-                px-4 py-2 rounded-xl font-black text-xs sm:text-sm transition-all
-                ${!voiceMuted
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-slate-200 text-slate-600'
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+              {[
+                {
+                  id: 'vovo',
+                  icon: '👵',
+                  name: 'Vovó Francisca',
+                  desc: 'Voz carinhosa e acolhedora'
+                },
+                {
+                  id: 'silvio',
+                  icon: '🎤',
+                  name: 'Silvio Santos',
+                  desc: 'Bordões & Show de Prêmios'
+                },
+                {
+                  id: 'quermesse',
+                  icon: '🎪',
+                  name: 'Locutor de Quermesse',
+                  desc: '75 apelidos & Arraiá Caipira'
                 }
-              `}
-            >
-              {!voiceMuted ? 'Ligada' : 'Muda'}
-            </button>
+              ].map((n) => (
+                <button
+                  key={n.id}
+                  onClick={() => handleNarratorChange(n.id)}
+                  type="button"
+                  className={`
+                    p-2.5 rounded-xl border-2 transition-all text-left flex sm:flex-col items-center sm:items-start gap-2.5
+                    ${narratorVoice === n.id
+                      ? 'bg-amber-50 border-amber-500 ring-2 ring-amber-300 shadow-sm'
+                      : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700'
+                    }
+                  `}
+                >
+                  <span className="text-2xl sm:text-3xl">{n.icon}</span>
+                  <div>
+                    <p className="font-black text-xs sm:text-sm text-slate-900 leading-tight">
+                      {n.name}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-semibold leading-tight mt-0.5">
+                      {n.desc}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Música de Fundo e Temas */}
           <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700">
+                <div className="w-9 h-9 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700 flex-shrink-0">
                   <Music className="w-5 h-5" />
                 </div>
                 <div>
@@ -116,7 +177,7 @@ export function SettingsModal({
                     Musiquinha de Fundo
                   </p>
                   <p className="text-xs text-slate-500">
-                    Trilha suave que não atrapalha a voz
+                    Trilha sonora que acompanha o jogo
                   </p>
                 </div>
               </div>
@@ -141,25 +202,26 @@ export function SettingsModal({
               <p className="text-xs font-bold text-slate-600 mb-1.5 uppercase">
                 Estilo da Trilha Sonora:
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 {[
-                  { id: 'calmo', label: 'Calma (Suave)' },
-                  { id: 'alegre', label: 'Alegre (Bossa)' },
-                  { id: 'classico', label: 'Clássica (Valsa)' }
+                  { id: 'bossa', label: '🎷 Bossa Nova', sub: 'Suave' },
+                  { id: 'show_do_milhao', label: '💡 Show do Milhão', sub: 'Suspense' },
+                  { id: 'sao_joao', label: '🪗 São João', sub: 'Forró & Arraiá' }
                 ].map((th) => (
                   <button
                     key={th.id}
                     onClick={() => handleThemeChange(th.id)}
                     type="button"
                     className={`
-                      py-2 px-2 rounded-xl text-xs font-black border-2 transition-all
+                      py-2 px-2 rounded-xl text-xs font-black border-2 transition-all text-center flex flex-col items-center justify-center
                       ${musicTheme === th.id
-                        ? 'bg-rose-50 border-rose-500 text-rose-700'
+                        ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-sm ring-2 ring-rose-200'
                         : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                       }
                     `}
                   >
-                    {th.label}
+                    <span>{th.label}</span>
+                    <span className="text-[10px] font-semibold opacity-75">{th.sub}</span>
                   </button>
                 ))}
               </div>

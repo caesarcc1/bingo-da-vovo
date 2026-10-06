@@ -74,6 +74,16 @@ export default function App() {
   // Mantém tela do tablet sempre acesa
   const { isLocked: isScreenLocked } = useWakeLock();
 
+  // Tipo de voz do narrador das pedras (vovo, silvio, quermesse)
+  const [narratorVoice, setNarratorVoice] = useState(() => {
+    return localStorage.getItem('vovo_narrator_voice') || 'vovo';
+  });
+
+  const handleSetNarratorVoice = (voice) => {
+    setNarratorVoice(voice);
+    localStorage.setItem('vovo_narrator_voice', voice);
+  };
+
   // Locução por voz
   const {
     isSpeaking,
@@ -82,7 +92,7 @@ export default function App() {
     speakNumber,
     repeatCurrentBall,
     cancelSpeech
-  } = useVoiceAnnouncer();
+  } = useVoiceAnnouncer(narratorVoice);
 
   // Quantidade de adversários fictícios na partida (3, 5 ou 8 - padrão 5)
   const [virtualPlayerCount, setVirtualPlayerCount] = useState(() => {
@@ -440,6 +450,7 @@ export default function App() {
           onToggleMusic={handleToggleMusic}
           virtualPlayerCount={virtualPlayerCount}
           onChangeVirtualPlayerCount={handleSetVirtualPlayerCount}
+          narratorVoice={narratorVoice}
         />
       )}
 
@@ -492,6 +503,7 @@ export default function App() {
             <CountdownOverlay
               onComplete={handleCountdownComplete}
               vovoName={profile.name}
+              narratorVoice={narratorVoice}
             />
           )}
 
@@ -642,6 +654,8 @@ export default function App() {
         }}
         voiceMuted={voiceMuted}
         setVoiceMuted={setVoiceMuted}
+        narratorVoice={narratorVoice}
+        setNarratorVoice={handleSetNarratorVoice}
         musicTheme={musicTheme}
         setMusicTheme={setMusicTheme}
         musicPlaying={musicPlaying}

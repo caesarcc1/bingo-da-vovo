@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { soundFX } from '../utils/soundEffects';
 
-export function CountdownOverlay({ onComplete, vovoName }) {
+export function CountdownOverlay({ onComplete, vovoName, narratorVoice = 'vovo' }) {
   const [step, setStep] = useState('prep');
   const audioRef = useRef(null);
 
@@ -11,8 +11,15 @@ export function CountdownOverlay({ onComplete, vovoName }) {
       window.speechSynthesis.cancel();
     }
 
-    // Toca a narração natural em português com voz da Francisca Neural
-    const audio = new Audio('/audio/countdown.mp3');
+    // Toca a narração específica do narrador escolhido
+    let audioUrl = '/audio/countdown.mp3';
+    if (narratorVoice === 'silvio') {
+      audioUrl = '/audio/silvio/countdown.mp3';
+    } else if (narratorVoice === 'quermesse') {
+      audioUrl = '/audio/quermesse/countdown.mp3';
+    }
+
+    const audio = new Audio(audioUrl);
     audioRef.current = audio;
     audio.volume = 1.0;
     
@@ -58,13 +65,17 @@ export function CountdownOverlay({ onComplete, vovoName }) {
       clearTimeout(tGo);
       clearTimeout(tEnd);
     };
-  }, [onComplete]);
+  }, [onComplete, narratorVoice]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none animate-pop-in">
       <div className="flex flex-col items-center justify-center text-center max-w-sm">
         <p className="text-amber-400 font-black text-xl sm:text-2xl uppercase tracking-widest mb-4">
-          Prepare sua cartela!
+          {narratorVoice === 'silvio'
+            ? 'Atenção no Auditório!'
+            : narratorVoice === 'quermesse'
+            ? 'Atenção Festeiros!'
+            : 'Prepare sua cartela!'}
         </p>
 
         {/* Círculo com a Animação da Contagem */}
@@ -77,7 +88,7 @@ export function CountdownOverlay({ onComplete, vovoName }) {
         >
           {step === 'prep' ? (
             <span className="text-slate-950 font-black text-2xl sm:text-3xl px-2 text-center uppercase tracking-tight">
-              Preparar!
+              {narratorVoice === 'silvio' ? 'Má oee!' : narratorVoice === 'quermesse' ? 'Olha o Bingo!' : 'Preparar!'}
             </span>
           ) : step === 'go' ? (
             <span className="text-slate-950 font-black text-3xl sm:text-4xl px-2 text-center uppercase leading-tight">
@@ -91,7 +102,13 @@ export function CountdownOverlay({ onComplete, vovoName }) {
         </div>
 
         <p className="text-white font-extrabold text-lg sm:text-xl mt-6 drop-shadow">
-          {step === 'go' ? 'Boa sorte a todos!' : 'O sorteio vai começar!'}
+          {step === 'go'
+            ? narratorVoice === 'silvio'
+              ? 'Quem vai ganhar no auditório?!'
+              : narratorVoice === 'quermesse'
+              ? 'Roda a roleta do bingo!'
+              : 'Boa sorte a todos!'
+            : 'O sorteio vai começar!'}
         </p>
       </div>
     </div>

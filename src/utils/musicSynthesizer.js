@@ -6,6 +6,12 @@
 // 3. Pausa/desliga automaticamente quando familiares entram na sala para não atrapalhar conversas
 // 4. Fallback automático para sintetizador Web Audio caso o áudio falhe
 
+const THEME_TRACKS = {
+  bossa: '/audio/bossa.mp3',
+  show_do_milhao: '/audio/themes/show_do_milhao.mp3',
+  sao_joao: '/audio/themes/sao_joao.mp3'
+};
+
 class MusicSynthesizer {
   constructor() {
     this.audio = null;
@@ -30,8 +36,9 @@ class MusicSynthesizer {
     if (typeof window === 'undefined') return;
 
     if (!this.audio) {
+      const src = THEME_TRACKS[this.currentTheme] || THEME_TRACKS.bossa;
       try {
-        this.audio = new Audio('/audio/bossa.mp3');
+        this.audio = new Audio(src);
         this.audio.loop = true;
         this.audio.volume = this.baseVolume;
         this.audio.preload = 'none';
@@ -147,7 +154,40 @@ class MusicSynthesizer {
   }
 
   setTheme(theme) {
+    if (this.currentTheme === theme && this.audio) return;
     this.currentTheme = theme;
+    const wasPlaying = this.isPlaying;
+    const src = THEME_TRACKS[theme] || THEME_TRACKS.bossa;
+
+    if (this.audio) {
+      try {
+        this.audio.pause();
+      } catch (e) {}
+    }
+
+    try {
+      this.audio = new Audio(src);
+      this.audio.loop = true;
+      this.audio.volume = this.isDucked ? 0.02 : this.baseVolume;
+      this.audio.preload = 'auto';
+
+      this.audio.addEventListener('error', () => {
+        console.warn(`[MusicSynthesizer] Tema ${theme} falhou ao carregar ${src}. Usando Bossa Nova.`);
+        if (src !== THEME_TRACKS.bossa) {
+          this.setTheme('bossa');
+        } else {
+          this.useSynthFallback = true;
+        }
+      });
+
+      if (wasPlaying) {
+        this.audio.play().catch(e => {
+          console.warn('[MusicSynthesizer] Erro ao reproduzir novo tema:', e);
+        });
+      }
+    } catch (err) {
+      console.warn('[MusicSynthesizer] Falha ao configurar tema:', err);
+    }
   }
 
   /**

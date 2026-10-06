@@ -16,7 +16,8 @@ export function HomeScreen({
   musicPlaying = true,
   onToggleMusic,
   virtualPlayerCount = 5,
-  onChangeVirtualPlayerCount
+  onChangeVirtualPlayerCount,
+  narratorVoice = 'vovo'
 }) {
   const isVovo = profile?.role === 'vovo';
 
@@ -63,31 +64,43 @@ export function HomeScreen({
             </div>
           </button>
 
-          {/* Botão de Música da Introdução */}
-          <button
-            onClick={onToggleMusic}
-            type="button"
-            className={`
-              flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border transition-all shadow-md active:scale-95 text-xs font-black
-              ${musicPlaying
-                ? 'bg-rose-950/70 border-rose-500/50 text-rose-300 hover:bg-rose-900/80'
-                : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-700/80'
-              }
-            `}
-            title={musicPlaying ? "Pausar musiquinha de fundo" : "Ligar musiquinha de fundo"}
-          >
-            {musicPlaying ? (
-              <>
-                <Volume2 className="w-4 h-4 text-rose-400 animate-pulse" />
-                <span className="hidden sm:inline">Música Ligada</span>
-              </>
-            ) : (
-              <>
-                <VolumeX className="w-4 h-4 text-slate-400" />
-                <span className="hidden sm:inline">Música Pausada</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Botão de Narrador do Bingo */}
+            <button
+              onClick={onOpenSettings}
+              type="button"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-300 font-extrabold text-xs shadow-md transition-all active:scale-95"
+              title="Mudar o narrador do bingo nas configurações"
+            >
+              <span>{narratorVoice === 'silvio' ? '🎤 Silvio' : narratorVoice === 'quermesse' ? '🎪 Quermesse' : '👵 Vovó'}</span>
+            </button>
+
+            {/* Botão de Música da Introdução */}
+            <button
+              onClick={onToggleMusic}
+              type="button"
+              className={`
+                flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border transition-all shadow-md active:scale-95 text-xs font-black
+                ${musicPlaying
+                  ? 'bg-rose-950/70 border-rose-500/50 text-rose-300 hover:bg-rose-900/80'
+                  : 'bg-slate-800/80 border-slate-700 text-slate-400 hover:bg-slate-700/80'
+                }
+              `}
+              title={musicPlaying ? "Pausar musiquinha de fundo" : "Ligar musiquinha de fundo"}
+            >
+              {musicPlaying ? (
+                <>
+                  <Volume2 className="w-4 h-4 text-rose-400 animate-pulse" />
+                  <span className="hidden sm:inline">Música Ligada</span>
+                </>
+              ) : (
+                <>
+                  <VolumeX className="w-4 h-4 text-slate-400" />
+                  <span className="hidden sm:inline">Música Pausada</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         <h1

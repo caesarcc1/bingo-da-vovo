@@ -389,7 +389,7 @@ export default function App() {
   };
 
   // Final da contagem 3-2-1 de preparação
-  const handleCountdownComplete = () => {
+  const handleCountdownComplete = useCallback(() => {
     setIsPreparing(false);
     drawNextBall();
     setIsPlaying(true);
@@ -397,7 +397,7 @@ export default function App() {
     if (musicPlaying) {
       musicSynthesizer.start();
     }
-  };
+  }, [drawNextBall, setIsPlaying, musicPlaying]);
 
   // Solicitar saída (pausa o jogo automaticamente e abre o modal de confirmação)
   const handleRequestExit = () => {

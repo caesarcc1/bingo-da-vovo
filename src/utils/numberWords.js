@@ -77,11 +77,11 @@ export const BINGO_COLORS = {
 };
 
 /**
- * Nova narração estilo Play Store: fala a letra e repete o número inteiro 2 vezes
- * Exemplo: "Letra B... doze! Doze!"
+ * Narração da bola sorteada: fala a letra e apenas 1 vez o número, sem repetir
+ * Exemplo: "Letra B... doze!"
  */
 export function getNarrationPhrase(num) {
   const letter = getBingoLetter(num);
   const nome = NUMEROS_PT[num] || String(num);
-  return `Letra ${letter}... ${nome}! ${nome}!`;
+  return `Letra ${letter}... ${nome}!`;
 }

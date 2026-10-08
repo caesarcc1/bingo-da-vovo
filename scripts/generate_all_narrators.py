@@ -29,7 +29,7 @@ def get_letter(num):
     if 61 <= num <= 75: return 'O'
     return ''
 
-# 75 Apelidos Tradicionais de Quermesse e Bingo Caipira no Brasil
+# 75 Apelidos Tradicionais de Quermesse (sem repetir o número)
 QUERMESSE_BORDÕES = {
     1: "Começou o jogo! Ronco do porco!",
     2: "A comadre e o compadre!",
@@ -38,35 +38,35 @@ QUERMESSE_BORDÕES = {
     5: "O cachorro do vizinho!",
     6: "Meia dúzia de ovos!",
     7: "Pintou o sete na parede!",
-    8: "Oito é biscoito!",
+    8: "Biscoito quentinho no café!",
     9: "Pingo no pé da noiva!",
-    10: "Craque de bola, camisa dez!",
+    10: "Craque de bola no arraiá!",
     11: "Um atrás do outro, as pernas do Pelé!",
     12: "Uma dúzia fechada!",
     13: "Número da sorte, viva Santo Antônio!",
     14: "Véspera de pagamento!",
-    15: "Valsa da debutante, quinze primaveras!",
+    15: "Valsa da debutante com o compadre!",
     16: "A mocidade no arraiá!",
     17: "O macaco sapeca!",
     18: "Maior de idade, tirou a carteira!",
-    19: "Dezenove na ponta do pé!",
+    19: "Na pontinha do pé!",
     20: "Olho de boi na fazenda!",
-    21: "No jogo do vinte e um!",
+    21: "No jogo de cartas!",
     22: "Dois patinhos na lagoa!",
     23: "Meia-noite e meia!",
     24: "Rapaz alegre no arraiá!",
-    25: "Vinte e cinco, dia de Natal!",
+    25: "Papai Noel no arraiá!",
     26: "Dia de Sant'Ana!",
     27: "O boi zebu!",
     28: "Dente do juízo!",
     29: "Dia de São Pedro!",
     30: "A liga da justiça!",
     31: "Noite de réveillon!",
-    32: "Trinta e dois dentes na boca!",
+    32: "Dentes na boca!",
     33: "A idade de Cristo!",
     34: "Pato no prato!",
     35: "Festa boa na roça!",
-    36: "Três dúzias redondinhas!",
+    36: "Três dúzias no capricho!",
     37: "Pula a fogueira, iaiá!",
     38: "A justiça de Goiás!",
     39: "Quase quarentão!",
@@ -90,7 +90,7 @@ QUERMESSE_BORDÕES = {
     57: "Dança da quadrilha!",
     58: "Pau de sebo escorregadio!",
     59: "Segura a emoção na cartela!",
-    60: "Sessentão em ponto!",
+    60: "Chegou no sessentão!",
     61: "Corre que o bingo tá perto!",
     62: "Viva São João festeiro!",
     63: "Cebola na panela de barro!",
@@ -108,14 +108,14 @@ QUERMESSE_BORDÕES = {
     75: "Fim da linha, acabou o globo!"
 }
 
-# Bordões Icônicos do Silvio Santos
+# Bordões do Silvio Santos falando o número apenas 1 VEZ
 SILVIO_PREFIXES = [
-    "Má oee! Letra {L}... {N}! {N}! Vem pra cá, vem pra cá!",
+    "Má oee! Letra {L}... {N}! Vem pra cá, vem pra cá!",
     "Ha-hai! Letra {L}... {N}! É bom ou não é?!",
     "Quem quer dinheiro?! Letra {L}... {N}!",
-    "Olha o aviãozinho! Letra {L}... {N}! {N}!",
+    "Olha o aviãozinho! Letra {L}... {N}!",
     "Atenção auditório! Letra {L}... {N}!",
-    "Certa resposta! Letra {L}... {N}! {N}!",
+    "Certa resposta! Letra {L}... {N}!",
     "Rrrô-rô! Letra {L}... {N}! Vem pra cá!",
     "Quem vai ganhar no auditório?! Letra {L}... {N}! Ha-hai!"
 ]
@@ -124,13 +124,13 @@ def get_silvio_phrase(num):
     letter = get_letter(num)
     nome = NUMEROS_PT[num]
     if num == 10:
-        return "Má oee! Letra B... Craque de bola, camisa dez! Número dez! Vem pra cá!"
+        return "Má oee! Letra B... Craque de bola, dez! Vem pra cá!"
     elif num == 12:
         return "Uma dúzia de dinheiro! Letra B... Doze! Vem pra cá, vem pra cá!"
     elif num == 22:
         return "Dois patinhos na lagoa! Letra I... Vinte e dois! Ha-hai!"
     elif num == 24:
-        return "Rrrô-rô! Letra I... Vinte e quatro! Vinte e quatro!"
+        return "Rrrô-rô! Letra I... Vinte e quatro! Vem pra cá!"
     elif num == 33:
         return "A idade de Cristo! Letra N... Trinta e três! Certa resposta!"
     elif num == 50:
@@ -157,45 +157,25 @@ os.makedirs(QUERMESSE_DIR, exist_ok=True)
 
 async def generate_ball(num, sem):
     async with sem:
-        # Silvio Santos
+        # Silvio Santos (número falado 1 única vez)
         silvio_file = os.path.join(SILVIO_DIR, f"{num}.mp3")
-        if not os.path.exists(silvio_file):
-            silvio_text = get_silvio_phrase(num)
-            comm_s = edge_tts.Communicate(silvio_text, "pt-BR-AntonioNeural", rate="+12%", pitch="+12Hz")
-            await comm_s.save(silvio_file)
+        silvio_text = get_silvio_phrase(num)
+        comm_s = edge_tts.Communicate(silvio_text, "pt-BR-AntonioNeural", rate="+12%", pitch="+12Hz")
+        await comm_s.save(silvio_file)
         
-        # Quermesse
+        # Quermesse (número falado 1 única vez)
         quermesse_file = os.path.join(QUERMESSE_DIR, f"{num}.mp3")
-        if not os.path.exists(quermesse_file):
-            quermesse_text = get_quermesse_phrase(num)
-            comm_q = edge_tts.Communicate(quermesse_text, "pt-BR-AntonioNeural", rate="+6%", pitch="+0Hz")
-            await comm_q.save(quermesse_file)
+        quermesse_text = get_quermesse_phrase(num)
+        comm_q = edge_tts.Communicate(quermesse_text, "pt-BR-AntonioNeural", rate="+6%", pitch="+0Hz")
+        await comm_q.save(quermesse_file)
         
-        print(f"Pedra {num}/75 gerada para Silvio e Quermesse.")
-
-async def generate_countdowns():
-    # Countdown Silvio
-    silvio_cd = os.path.join(SILVIO_DIR, "countdown.mp3")
-    if not os.path.exists(silvio_cd):
-        text_s = "Má oee! Atenção no auditório!... Três!... Dois!... Um!... Rrrô-rô, valendo! Vem pra cá!"
-        comm_s = edge_tts.Communicate(text_s, "pt-BR-AntonioNeural", rate="+12%", pitch="+12Hz")
-        await comm_s.save(silvio_cd)
-        print("Countdown Silvio gerado.")
-
-    # Countdown Quermesse
-    quermesse_cd = os.path.join(QUERMESSE_DIR, "countdown.mp3")
-    if not os.path.exists(quermesse_cd):
-        text_q = "Atenção festeiros do arraiá!... Três!... Dois!... Um!... Roda a roleta do bingo, valendo!"
-        comm_q = edge_tts.Communicate(text_q, "pt-BR-AntonioNeural", rate="+6%", pitch="+0Hz")
-        await comm_q.save(quermesse_cd)
-        print("Countdown Quermesse gerado.")
+        print(f"Pedra {num}/75 gerada (1x): {num}")
 
 async def main():
-    sem = asyncio.Semaphore(5)
-    await generate_countdowns()
+    sem = asyncio.Semaphore(6)
     tasks = [generate_ball(num, sem) for num in range(1, 76)]
     await asyncio.gather(*tasks)
-    print("TODOS os áudios gerados com sucesso!")
+    print("TODOS os áudios de Silvio e Quermesse regerados sem repetição!")
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -4,14 +4,22 @@ import { soundFX } from '../utils/soundEffects';
 export function CountdownOverlay({ onComplete, vovoName, narratorVoice = 'vovo' }) {
   const [step, setStep] = useState('prep');
   const audioRef = useRef(null);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  const startedRef = useRef(false);
+  const completedRef = useRef(false);
 
   useEffect(() => {
-    // Garante cancelamento de qualquer voz anterior presa no buffer do navegador
+    // Trava de execução única: impede repetição caso o componente pai re-renderize
+    if (startedRef.current) return;
+    startedRef.current = true;
+
+    // Cancela qualquer fala residual de speechSynthesis no navegador
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
 
-    // Toca a narração específica do narrador escolhido
+    // Seleciona o áudio do narrador atual
     let audioUrl = '/audio/countdown.mp3';
     if (narratorVoice === 'silvio') {
       audioUrl = '/audio/silvio/countdown.mp3';
@@ -22,50 +30,74 @@ export function CountdownOverlay({ onComplete, vovoName, narratorVoice = 'vovo' 
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
     audio.volume = 1.0;
-    
-    // Tenta tocar o áudio da contagem
+
+    const finish = () => {
+      if (completedRef.current) return;
+      completedRef.current = true;
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        } catch {
+          // Ignora
+        }
+        audioRef.current = null;
+      }
+      onCompleteRef.current?.();
+    };
+
+    // Conclui naturalmente quando o áudio terminar de falar
+    audio.onended = () => {
+      setTimeout(finish, 350);
+    };
+
+    // Tenta reproduzir o áudio
     audio.play().catch(() => {
-      // Fallback gracioso com SFX caso haja bloqueio de áudio
       soundFX.playBallDrawn();
     });
 
+    // Animação visual sincronizada dos números (3, 2, 1, Valendo)
     const t3 = setTimeout(() => {
       setStep(3);
       soundFX.playPop();
-    }, 1100);
+    }, 1200);
 
     const t2 = setTimeout(() => {
       setStep(2);
       soundFX.playPop();
-    }, 2000);
+    }, 2200);
 
     const t1 = setTimeout(() => {
       setStep(1);
       soundFX.playPop();
-    }, 2900);
+    }, 3200);
 
     const tGo = setTimeout(() => {
       setStep('go');
       soundFX.playBallDrawn();
-    }, 3800);
+    }, 4200);
 
-    const tEnd = setTimeout(() => {
-      onComplete();
-    }, 4900);
+    // Timeout de segurança caso o navegador bloqueie o evento onended
+    const maxDuration = narratorVoice === 'silvio' ? 6200 : 5500;
+    const tFallback = setTimeout(finish, maxDuration);
 
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.currentTime = 0;
-        audioRef.current = null;
-      }
       clearTimeout(t3);
       clearTimeout(t2);
       clearTimeout(t1);
       clearTimeout(tGo);
-      clearTimeout(tEnd);
+      clearTimeout(tFallback);
+      if (audioRef.current) {
+        try {
+          audioRef.current.pause();
+          audioRef.current.src = '';
+        } catch {
+          // Ignora
+        }
+        audioRef.current = null;
+      }
     };
-  }, [onComplete, narratorVoice]);
+  }, [narratorVoice]);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none animate-pop-in">

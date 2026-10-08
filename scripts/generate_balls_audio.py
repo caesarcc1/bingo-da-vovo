@@ -35,8 +35,8 @@ async def generate_single(num, sem):
     async with sem:
         letter = get_letter(num)
         nome = NUMEROS_PT[num]
-        # Frase carinhosa e clara: "Letra B... doze! Doze!"
-        text = f"Letra {letter}... {nome}! {nome}!"
+        # Fala a letra e apenas 1 vez o número, sem repetir
+        text = f"Letra {letter}... {nome}!"
         out_path = os.path.join(OUTPUT_DIR, f"{num}.mp3")
         
         communicate = edge_tts.Communicate(text, VOICE, rate="-5%", pitch="+0Hz")
